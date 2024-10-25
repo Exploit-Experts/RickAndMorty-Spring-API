@@ -1,17 +1,16 @@
 package com.rickmorty.Controllers;
 
+import com.rickmorty.DTO.LocationDto;
 import com.rickmorty.Models.LocationModel;
-import com.rickmorty.Models.LocationResponse;
 import com.rickmorty.Services.LocationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/locations")
+@RequestMapping("/locations")
 public class LocationController {
 
     private final LocationService locationService;
@@ -23,13 +22,7 @@ public class LocationController {
 
     @GetMapping("/")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<LocationResponse> getAllLocations() {
+    public List<LocationDto> getAllLocations() {
         return locationService.findAllLocations();
-    }
-
-    @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public Mono<LocationModel> findLocationById(@PathVariable String id){
-        return locationService.findLocationById(id);
     }
 }

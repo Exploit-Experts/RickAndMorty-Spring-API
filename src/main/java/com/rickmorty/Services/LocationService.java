@@ -1,18 +1,19 @@
 package com.rickmorty.Services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rickmorty.Models.CharacterModel;
+import com.rickmorty.DTO.ApiResponseDto;
+import com.rickmorty.DTO.LocationDto;
 import com.rickmorty.Models.LocationModel;
-import com.rickmorty.Models.LocationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -21,32 +22,24 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @Service
 public class LocationService {
 
-    private final WebClient webClient;
+    private static final String URL_API = "https://rickandmortyapi.com/api";
 
-    @Autowired
-    public LocationService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("https://rickandmortyapi.com/api").build();
-    }
+    public List<LocationDto> findAllLocations() {
+        try{
+            HttpClient client = HttpClient.newHttpClient();
 
-    public Mono<LocationResponse> findAllLocations() {
-        log.info("Buscando localizações");
-        return webClient
-                .get()
-                .uri("/location")
-                .accept(APPLICATION_JSON)
-                .retrieve()
-                .bodyToMono(LocationResponse.class)
-                .doOnNext(location -> log.info("Localização recebida: {}", location))
-                .doOnError(e -> log.error("Erro ao buscar localizações: {}", e.getMessage()));
-    }
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(URL_API + "/location/"))
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            ObjectMapper objectMapper = new ObjectMapper();
 
-    public Mono<LocationModel> findLocationById(String id) {
-        return webClient
-                .get()
-                .uri("/location/" + id)
-                .accept(APPLICATION_JSON)
-                .retrieve()
-                .bodyToMono(LocationModel.class)
-                .doOnError(e -> log.error("Erro ao buscar localização por ID {}: {}", id, e.getMessage()));
+            ApiResponseDto apiResponseDto = objectMapper.readValue(response.body(), ApiResponseDto.class);
+
+            return apiResponseDto.results();
+        } catch (Exception e) {
+            System.out.println("Um erro aconteceu"+e.getMessage());
+        }
+        return List.of();
     }
 }
