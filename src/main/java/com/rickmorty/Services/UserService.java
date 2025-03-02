@@ -4,9 +4,13 @@ import com.rickmorty.DTO.UserDto;
 import com.rickmorty.DTO.UserPatchDto;
 import com.rickmorty.Models.UserModel;
 import com.rickmorty.Repository.UserRepository;
+import com.rickmorty.enums.UserRole;
 import com.rickmorty.exceptions.*;
 import com.rickmorty.interfaces.UserServiceInterface;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -30,8 +34,13 @@ public class UserService implements UserServiceInterface {
         userModel.setName(userDto.name());
         userModel.setSurname(userDto.surname());
         userModel.setEmail(userDto.email());
-        userModel.setPassword(userDto.password());
         userModel.setDate_register(LocalDateTime.now());
+        userModel.setRole(UserRole.USER);
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(userDto.password());
+
+        userModel.setPassword(encryptedPassword);
+
         userRepository.save(userModel);
     }
 
@@ -152,5 +161,11 @@ public class UserService implements UserServiceInterface {
                     .collect(Collectors.toList());
             throw new ValidationErrorException(errors);
         }
+    }
+    public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
+        if (userRepository.findUserByEmail(email) == null || !userRepository.findByEmail(email).get().isEnabled()) {
+            throw new UserNotFoundException();
+        }
+        return userRepository.findUserByEmail(email);
     }
 }

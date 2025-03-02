@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -69,6 +70,7 @@ public class UserController {
                                                     examples = @ExampleObject(value = "{\"message\": \"Email já cadastrado\"}"))),
             })
     @PutMapping("{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid UserDto userDto, BindingResult result) {
         userService.updateUser(id, userDto, result);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -98,6 +100,7 @@ public class UserController {
                                                     examples = @ExampleObject(value = "{\"message\": \"Email já cadastrado\"}"))),
             })
     @PatchMapping("{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> patch(@PathVariable Long id, @RequestBody @Valid UserPatchDto userPatchDto, BindingResult result) {
         userService.patchUser(id, userPatchDto, result);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -117,6 +120,7 @@ public class UserController {
                                                     examples = @ExampleObject(value = "{\"message\": \"Usuário não encontrado\"}"))),
             })
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

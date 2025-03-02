@@ -5,6 +5,7 @@ import com.rickmorty.Services.FavoriteService;
 import com.rickmorty.enums.SortFavorite;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +55,7 @@ public class FavoriteController {
                                                     examples = @ExampleObject(value = "{\"message\": \"O favorito já está cadastrado\"}"))),
             })
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> createFavorite(@RequestBody @Valid FavoriteDto favoriteDto, BindingResult result) {
         favoriteService.create(favoriteDto, result);
         return new ResponseEntity<>(HttpStatus.CREATED);
@@ -76,6 +78,7 @@ public class FavoriteController {
                                     })),
             })
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<Page<FavoriteResponseDto>> getAllFavorites(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
@@ -105,6 +108,7 @@ public class FavoriteController {
                                                     })),
         })
     @DeleteMapping("/{userId}/{favoriteId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<String> removeFavorite(@PathVariable Long userId, @PathVariable Long favoriteId) {
         favoriteService.removeFavorite(userId, favoriteId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -125,6 +129,7 @@ public class FavoriteController {
                                     })),
             })
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<String> removeFavoritesByUserId(@PathVariable Long userId) {
         favoriteService.removeAllFavoritesByUserId(userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
