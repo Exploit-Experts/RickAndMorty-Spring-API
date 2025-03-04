@@ -7,15 +7,20 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.rickmorty.DTO.AuthenticationDto;
 import com.rickmorty.Models.UserModel;
+import com.rickmorty.exceptions.InvalidCredentialsException;
+import com.rickmorty.exceptions.UserInactiveException;
+import com.rickmorty.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class TokenService {
@@ -24,12 +29,15 @@ public class TokenService {
     private String secret;
 
     private AuthenticationManager authenticationManager;
+    private UserService userService;
 
-    TokenService(AuthenticationManager authenticationManager) {
+    TokenService(AuthenticationManager authenticationManager, UserService userService) {
         this.authenticationManager = authenticationManager;
+        this.userService = userService;
     }
 
     public String login(AuthenticationDto loginDTO){
+        validateLogin(loginDTO);
         try {
             var userPassword = new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.password());
             var auth = this.authenticationManager.authenticate(userPassword);
@@ -39,6 +47,37 @@ public class TokenService {
             throw new RuntimeException("Error while logging in", e.getCause());
         }
     }
+
+    private void validateLogin(AuthenticationDto loginDTO) {
+        try {
+            if (loginDTO.email() == null || loginDTO.password() == null) {
+                throw new InvalidCredentialsException("Email e senha são obrigatórios");
+            } else if (!loginDTO.email().matches("^[^@]+@[^@]+$")) {
+                throw new InvalidCredentialsException("Email no formato incorreto");
+            }
+
+            Optional<UserModel> user = userService.findByEmail(loginDTO.email());
+
+            if (user.isEmpty()) throw new UserNotFoundException();
+
+            if (!user.get().isEnabled()) throw new UserInactiveException("Usuário inativo");
+
+            if (!new BCryptPasswordEncoder().matches(loginDTO.password(), user.get().getPassword())) {
+                throw new InvalidCredentialsException("Email ou senha não conferem");
+            }
+
+        } catch (InvalidCredentialsException e) {
+            throw new InvalidCredentialsException(e.getMessage());
+        }catch (UserNotFoundException e){
+            throw new UserNotFoundException();
+        } catch (UserInactiveException e) {
+            throw new UserInactiveException(e.getMessage());
+        }catch (Exception e) {
+            throw new RuntimeException("Erro durante o login");
+        }
+
+    }
+
     private String generateToken(UserModel user){
         try{
             Algorithm algorithm = Algorithm.HMAC256(secret);

@@ -3,6 +3,7 @@ package com.rickmorty.infra.security;
 
 import com.rickmorty.Services.TokenService;
 import com.rickmorty.Services.UserService;
+import com.rickmorty.exceptions.UserNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +36,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                 var login = tokenService.validateToken(token);
                 UserDetails userDetails = userService.loadUserByEmail(login);
                 if (userDetails == null) {
-                    throw new RuntimeException("User not found");
+                    throw new UserNotFoundException();
                 }
                 System.out.println("Roles do usuário: " + userDetails.getAuthorities());
 

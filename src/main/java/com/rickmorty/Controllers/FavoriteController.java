@@ -50,6 +50,9 @@ public class FavoriteController {
                                             @ExampleObject(name = "itemType not found", description = "When an apiId is sent that does not exist. Ex: apiId: 1000000, itemType: \"LOCATION\"", value = "{\"message\": \"LOCATION não encontrada para o ID\"}"),
                                             @ExampleObject(name = "User not found", value = "{\"message\": \"Usuário não encontrado\"}")
                                     })),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "409", description = "Conflict - Favorite already exists",
                                  content = @Content(mediaType = "application/json",
                                                     examples = @ExampleObject(value = "{\"message\": \"O favorito já está cadastrado\"}"))),
@@ -68,6 +71,9 @@ public class FavoriteController {
                     @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
                             content = @Content(mediaType = "application/json",
                                     examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(
                             responseCode = "404",
                             description = "NOT FOUND",
@@ -100,6 +106,9 @@ public class FavoriteController {
                                         @ExampleObject(name = "Inválid direction", value = "{\"message\": \"Direção de sort inválida\"}"),
                                         @ExampleObject(name = "Inválid sort field", value = "{\"message\": \"Campo sort inválido\"}")
                                     })),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "NOT FOUND",
                                  content = @Content(mediaType = "application/json", 
                                                     examples = {
@@ -121,6 +130,9 @@ public class FavoriteController {
                     @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
                             content = @Content(mediaType = "application/json",
                                     examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "User not found",
                             content = @Content(mediaType = "application/json",
                                     examples = {

@@ -16,7 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1")
 public class UserController {
 
     @Autowired
@@ -29,17 +29,20 @@ public class UserController {
                     @ApiResponse(responseCode = "400", description = "Incorrect data submission",
                                  content = @Content(mediaType = "application/json",
                                          examples = { @ExampleObject(name = "Invalid name", value = "{\"errors\": [\"O nome é obrigatório\", \"O nome deve ter entre 3 e 50 caracteres.\"]}"),
-                                             @ExampleObject(name = "Invalid surname", value = "{\"errors\": [\"O sobrenome é obrigatório\", \"O sobrenome deve ter entre 3 e 50 caracteres.\"]}"),
+                                                @ExampleObject(name = "Invalid surname", value = "{\"errors\": [\"O sobrenome é obrigatório\", \"O sobrenome deve ter entre 3 e 50 caracteres.\"]}"),
                                              @ExampleObject(name = "Invalid email", value = "{\"errors\": [\"O e-mail é obrigatório\", \"Formato de e-mail inválido.\"]}"),
                                              @ExampleObject(name = "Invalid password", value = "{\"errors\": [\"A senha é obrigatória\", \"A senha deve ter pelo menos 6 caracteres.\"]}")
                                             }
                                  )
                     ),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                            examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "409", description = "Conflict - Email already exists", 
                                  content = @Content(mediaType = "application/json", 
                                                     examples = @ExampleObject(value = "{\"message\": \"Email já cadastrado\"}"))),
             })
-    @PostMapping
+    @PostMapping("/public/users")
     public ResponseEntity<Void> createUser(@RequestBody @Valid UserDto userDto, BindingResult result) {
         userService.saveUser(userDto, result);
         return new ResponseEntity<>(HttpStatus.CREATED);
@@ -62,6 +65,9 @@ public class UserController {
                                         }
                                     )
                     ),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "User not found", 
                                  content = @Content(mediaType = "application/json", 
                                                     examples = @ExampleObject(value = "{\"message\": \"Usuário não encontrado\"}"))),
@@ -69,8 +75,7 @@ public class UserController {
                                  content = @Content(mediaType = "application/json", 
                                                     examples = @ExampleObject(value = "{\"message\": \"Email já cadastrado\"}"))),
             })
-    @PutMapping("{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PutMapping("users/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid UserDto userDto, BindingResult result) {
         userService.updateUser(id, userDto, result);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -91,7 +96,9 @@ public class UserController {
                                     }
                             )
                     ),
-
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "User not found", 
                                  content = @Content(mediaType = "application/json", 
                                                     examples = @ExampleObject(value = "{\"message\": \"Usuário não encontrado\"}"))),
@@ -99,8 +106,7 @@ public class UserController {
                                  content = @Content(mediaType = "application/json", 
                                                     examples = @ExampleObject(value = "{\"message\": \"Email já cadastrado\"}"))),
             })
-    @PatchMapping("{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("users/{id}")
     public ResponseEntity<Void> patch(@PathVariable Long id, @RequestBody @Valid UserPatchDto userPatchDto, BindingResult result) {
         userService.patchUser(id, userPatchDto, result);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -114,13 +120,14 @@ public class UserController {
                             content = @Content(mediaType = "application/json",
                                     examples = {@ExampleObject(name = "Zero ID sent as a parameter", value = "{\"message\": \"ID enviado inválido, o id deve ser um número válido e positivo\"}"),
                                                 @ExampleObject(name = "Invalid parameter", value = "{\"message\": \"Parâmetro id inválido\"}")})),
-
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "User not found", 
                                  content = @Content(mediaType = "application/json", 
                                                     examples = @ExampleObject(value = "{\"message\": \"Usuário não encontrado\"}"))),
             })
-    @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("users/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
