@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.CharacterDto;
 import com.rickmorty.DTO.InfoDto;
+import com.rickmorty.DTO.LocationCharacterDto;
 import com.rickmorty.Utils.Config;
 import com.rickmorty.enums.Gender;
 import com.rickmorty.enums.LifeStatus;
@@ -177,6 +178,12 @@ public class CharacterService implements CharacterServiceInterface {
     }
 
     private CharacterDto rewriteCharacterDto(CharacterDto character) {
+        LocationCharacterDto characterLocation = character.location() != null
+                ? new LocationCharacterDto(
+                character.location().name(),
+                character.location().url().replace(config.getApiBaseUrl() + "/location/", config.getLocalBaseUrl() + "/locations/"))
+                : null;
+
         return new CharacterDto(
                 character.id(),
                 character.name(),
@@ -184,13 +191,15 @@ public class CharacterService implements CharacterServiceInterface {
                 character.species(),
                 character.type(),
                 character.gender(),
-                character.image().replace(config.getApiBaseUrl() +"/character/",
-                        config.getLocalBaseUrl() + "/characters/"),
+                character.image().replace(config.getApiBaseUrl() + "/character/", config.getLocalBaseUrl() + "/characters/"),
                 character.episode().stream()
-                        .map(episode -> episode.replace(config.getApiBaseUrl() + "/episode/",
-                                config.getLocalBaseUrl() + "/episodes/"))
-                        .collect(Collectors.toList()));
+                        .map(episode -> episode.replace(config.getApiBaseUrl() + "/episode/", config.getLocalBaseUrl() + "/episodes/"))
+                        .collect(Collectors.toList()),
+                characterLocation
+        );
     }
+
+
 
     private byte[] downloadImage(URL imageUrl) throws Exception {
         try (InputStream in = imageUrl.openStream()) {
