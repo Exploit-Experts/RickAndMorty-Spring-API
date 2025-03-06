@@ -11,6 +11,7 @@ import com.rickmorty.exceptions.EpisodeNotFoundException;
 import com.rickmorty.exceptions.InvalidIdException;
 import com.rickmorty.exceptions.InvalidParameterException;
 import com.rickmorty.exceptions.NotFoundException;
+import com.rickmorty.interfaces.EpisodeServiceInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,11 +26,12 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class EpisodeService {
+public class EpisodeService implements EpisodeServiceInterface {
 
     @Autowired
     Config config;
 
+    @Override
     public ApiResponseDto<EpisodeDto> findAllEpisodes(Integer page, String name, String episode, SortEpisode sort) {
 
         if (episode != null && !Pattern.matches("^S\\d{2}(E\\d{2})?$", episode.toUpperCase())) throw new InvalidParameterException("Parâmetro episode não está no formato correto. Esperado: SXXEXX");
@@ -71,6 +73,7 @@ public class EpisodeService {
         return null;
     }
 
+    @Override
     public EpisodeDto findEpisodeById(Long id) {
         try {
             if (id == null || id < 1) throw new InvalidIdException();

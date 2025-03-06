@@ -17,10 +17,11 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.rickmorty.enums.SortLocation;
+import com.rickmorty.interfaces.LocationServiceInterface;
 
 @Slf4j
 @Service
-public class LocationService {
+public class LocationService implements LocationServiceInterface {
 
     @Autowired
     Config config;
@@ -33,6 +34,7 @@ public class LocationService {
         this.client = HttpClient.newHttpClient();
     }
 
+    @Override
     public ApiResponseDto<LocationDto> findAllLocations(Integer page, String name, String type, String dimension, SortLocation sort) {
         if (page != null && page < 1) throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
         try {
@@ -60,6 +62,7 @@ public class LocationService {
         }
     }
 
+    @Override
     public LocationDto getLocationById(Long id) {
         if (id == null || id < 1) throw new InvalidIdException();
         try {

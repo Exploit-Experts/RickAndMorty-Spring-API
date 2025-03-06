@@ -3,7 +3,6 @@ package com.rickmorty.Models;
 import com.rickmorty.enums.ItemType;
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.util.HashSet;
 import java.util.Set;
 

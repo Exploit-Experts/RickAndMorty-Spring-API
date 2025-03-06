@@ -1,4 +1,5 @@
 package com.rickmorty.Services;
+
 import com.rickmorty.DTO.FavoriteResponseDto;
 import com.rickmorty.Models.FavoriteModel;
 import com.rickmorty.Models.UserModel;
@@ -6,26 +7,24 @@ import com.rickmorty.Repository.FavoriteRepository;
 import com.rickmorty.Repository.UserRepository;
 import com.rickmorty.enums.SortFavorite;
 import com.rickmorty.exceptions.*;
-import com.rickmorty.exceptions.InvalidParameterException;
+import com.rickmorty.interfaces.FavoriteServiceInterface;
+import com.rickmorty.DTO.FavoriteDto;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import com.rickmorty.DTO.FavoriteDto;
-import com.rickmorty.exceptions.UserNotFoundException;
-import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class FavoriteService {
+public class FavoriteService implements FavoriteServiceInterface {
 
     @Autowired
     private FavoriteRepository favoriteRepository;
@@ -42,6 +41,7 @@ public class FavoriteService {
     @Autowired
     LocationService locationService;
 
+    @Override
     @Transactional
     public void create(FavoriteDto favoriteDto, BindingResult result) {
         validateFavorite(favoriteDto, result);
@@ -73,6 +73,7 @@ public class FavoriteService {
         }
     }
 
+    @Override
     public Page<FavoriteResponseDto> getAllFavorites(Long userId, int page, SortFavorite sort) {
         Sort.Direction direction;
         try {
@@ -98,6 +99,7 @@ public class FavoriteService {
         ));
     }
 
+    @Override
     @Transactional
     public void removeFavorite(Long userId, Long favoriteId) {
         if (userId == null || userId <= 0) throw new InvalidParameterException("Parâmetro userId inválido. Deve ser um número positivo maior que zero");
@@ -112,6 +114,7 @@ public class FavoriteService {
         favoriteRepository.deleteByUserIdAndFavoriteId(userId, favoriteId);
     }
 
+    @Override
     @Transactional
     public void removeAllFavoritesByUserId(Long userId) {
         Optional<UserModel> user = userRepository.findByIdAndActive(userId, 1);

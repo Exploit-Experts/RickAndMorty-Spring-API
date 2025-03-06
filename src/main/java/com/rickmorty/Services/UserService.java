@@ -5,12 +5,11 @@ import com.rickmorty.DTO.UserPatchDto;
 import com.rickmorty.Models.UserModel;
 import com.rickmorty.Repository.UserRepository;
 import com.rickmorty.exceptions.*;
-
+import com.rickmorty.interfaces.UserServiceInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -18,11 +17,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class UserService {
+public class UserService implements UserServiceInterface {
 
     @Autowired
     private UserRepository userRepository;
 
+    @Override
     public void saveUser(UserDto userDto, BindingResult result) {
         validateFieldsWithCheckEmail(userDto, result);
 
@@ -35,11 +35,12 @@ public class UserService {
         userRepository.save(userModel);
     }
 
+    @Override
     public void updateUser(Long id, UserDto userDto, BindingResult result) {
         if (id == null || id < 1) throw new InvalidIdException();
 
         Optional<UserModel> optionalUser = userRepository.findByIdAndActive(id, 1);
-        if (!optionalUser.isPresent()) throw new UserNotFoundException();
+        if (optionalUser.isEmpty()) throw new UserNotFoundException();
 
         UserModel user = optionalUser.get();
         validateFields(result);
@@ -58,12 +59,13 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Override
     public void patchUser(Long id, UserPatchDto userPatchDto, BindingResult result) {
 
         if (id == null || id < 1) throw new InvalidIdException();
 
         Optional<UserModel> optionalUser = userRepository.findByIdAndActive(id, 1);
-        if (!optionalUser.isPresent()) throw new UserNotFoundException();
+        if (optionalUser.isEmpty()) throw new UserNotFoundException();
 
         UserModel user = optionalUser.get();
         boolean isUpdated = false;
@@ -93,10 +95,11 @@ public class UserService {
         }
     }
 
+    @Override
     public void deleteUser(Long id) {
         if (id == null || id < 1) throw new InvalidIdException();
         Optional<UserModel> optionalUser = userRepository.findByIdAndActive(id, 1);
-        if (!optionalUser.isPresent()) throw new UserNotFoundException();
+        if (optionalUser.isEmpty()) throw new UserNotFoundException();
 
         UserModel userModel = optionalUser.get();
         userModel.setActive(0);

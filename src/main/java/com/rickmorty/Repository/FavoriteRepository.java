@@ -1,6 +1,4 @@
-
 package com.rickmorty.Repository;
-
 
 import com.rickmorty.Models.FavoriteModel;
 import com.rickmorty.enums.ItemType;

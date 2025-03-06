@@ -37,11 +37,11 @@ public class LocationController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponseDto<LocationDto>> getAllLocations(
-            @RequestParam(value = "page", required = false) Integer page,
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "dimension", required = false) String dimension,
-            @RequestParam(value = "sort", required = false) SortLocation sort) {
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String dimension,
+            @RequestParam(required = false) SortLocation sort) {
         ApiResponseDto<LocationDto> locations = locationService.findAllLocations(page, name, type, dimension, sort);
         return ResponseEntity.ok(locations);
     }
