@@ -1,5 +1,7 @@
 package com.rickmorty.infra.security;
 
+import com.rickmorty.handlers.CustomAccessDeniedHandler;
+import com.rickmorty.handlers.CustomAuthenticationEntryHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,7 +27,7 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, CustomAuthenticationEntryHandler customAuthenticationEntryHandler) throws Exception {
 
             return httpSecurity
                     .csrf(csrf -> csrf.disable())
@@ -39,7 +41,8 @@ public class SecurityConfiguration {
                             .anyRequest().permitAll()
                     )
                     .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .authenticationEntryPoint(customAuthenticationEntryHandler)
+                            .accessDeniedHandler(new CustomAccessDeniedHandler())
                     )
                     .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                     .build();
