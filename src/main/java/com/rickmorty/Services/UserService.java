@@ -7,6 +7,7 @@ import com.rickmorty.Repository.UserRepository;
 import com.rickmorty.enums.UserRole;
 import com.rickmorty.exceptions.*;
 import com.rickmorty.interfaces.UserServiceInterface;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,6 +28,7 @@ public class UserService implements UserServiceInterface {
     private UserRepository userRepository;
 
     @Override
+    @Transactional
     public void saveUser(UserDto userDto, BindingResult result) {
         validateFieldsWithCheckEmail(userDto, result);
 

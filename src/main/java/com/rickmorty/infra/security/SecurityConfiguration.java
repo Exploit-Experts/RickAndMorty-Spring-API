@@ -2,7 +2,6 @@ package com.rickmorty.infra.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -32,12 +31,12 @@ public class SecurityConfiguration {
                     .csrf(csrf -> csrf.disable())
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(auth -> auth
-                            .requestMatchers(HttpMethod.PUT,"/api/v1/users/**").authenticated()
-                            .requestMatchers(HttpMethod.PATCH,"/api/v1/users/**").authenticated()
-                            .requestMatchers(HttpMethod.DELETE,"/api/v1/users/**").authenticated()
-                            .requestMatchers("/api/v1/public/**").permitAll()
-                            .requestMatchers("/api/v1/favorites").authenticated()
-                            .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**", "/webjars/**").permitAll()
+                            .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
+                            .requestMatchers("/api/v1/favorites/**").authenticated()
+                            .requestMatchers("/api/v1/auth/**").permitAll()
+                            .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**",
+                                    "/swagger-resources/**", "/webjars/**").permitAll()
+                            .anyRequest().permitAll()
                     )
                     .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint)

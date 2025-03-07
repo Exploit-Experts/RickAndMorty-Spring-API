@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
-@RequestMapping("api/v1/public/characters")
+@RequestMapping("api/v1/characters")
 public class CharacterController {
 
         @Autowired
