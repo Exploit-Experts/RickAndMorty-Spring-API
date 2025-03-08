@@ -3,6 +3,7 @@ package com.rickmorty.Controllers;
 import com.rickmorty.DTO.FavoriteResponseDto;
 import com.rickmorty.Services.FavoriteService;
 import com.rickmorty.enums.SortFavorite;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
 @RequestMapping("/api/v1/favorites")
+@SecurityRequirement(name = "BearerAuth")
 public class FavoriteController {
     private final FavoriteService favoriteService;
 

@@ -49,9 +49,10 @@ public class AuthenticationController {
     @PostMapping("/register")
     public ResponseEntity<Void> createUser(@RequestBody @Valid UserDto userDto, BindingResult result) {
         String token = authService.registerUser(userDto, result);
-        return ResponseEntity.ok()
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .header("Authorization", "Bearer " + token)
-                .build();    }
+                .build();
+    }
 
     @Operation(summary = "User login",
             description = "Authenticate user with email and password",
@@ -69,7 +70,7 @@ public class AuthenticationController {
                     @ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Usuário não encontrado\"}"))),
             })
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid AuthenticationDto authenticationDto){
+    public ResponseEntity<Void> login(@RequestBody @Valid AuthenticationDto authenticationDto){
         String token = authService.login(authenticationDto);
         return ResponseEntity.ok()
                 .header("Authorization", "Bearer " + token)

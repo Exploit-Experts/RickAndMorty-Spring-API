@@ -17,7 +17,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
 
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", "Acesso nao autorizado. Autenticacao necessaria");
+        errorResponse.put("message", "Acesso não autorizado. Autenticação necessária");
 
         String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
 
