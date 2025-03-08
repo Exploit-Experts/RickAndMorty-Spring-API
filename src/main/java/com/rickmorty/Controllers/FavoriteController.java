@@ -3,8 +3,10 @@ package com.rickmorty.Controllers;
 import com.rickmorty.DTO.FavoriteResponseDto;
 import com.rickmorty.Services.FavoriteService;
 import com.rickmorty.enums.SortFavorite;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
 @RequestMapping("/api/v1/favorites")
+@SecurityRequirement(name = "BearerAuth")
 public class FavoriteController {
     private final FavoriteService favoriteService;
 
@@ -49,11 +52,15 @@ public class FavoriteController {
                                             @ExampleObject(name = "itemType not found", description = "When an apiId is sent that does not exist. Ex: apiId: 1000000, itemType: \"LOCATION\"", value = "{\"message\": \"LOCATION não encontrada para o ID\"}"),
                                             @ExampleObject(name = "User not found", value = "{\"message\": \"Usuário não encontrado\"}")
                                     })),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "409", description = "Conflict - Favorite already exists",
                                  content = @Content(mediaType = "application/json",
                                                     examples = @ExampleObject(value = "{\"message\": \"O favorito já está cadastrado\"}"))),
             })
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> createFavorite(@RequestBody @Valid FavoriteDto favoriteDto, BindingResult result) {
         favoriteService.create(favoriteDto, result);
         return new ResponseEntity<>(HttpStatus.CREATED);
@@ -66,6 +73,9 @@ public class FavoriteController {
                     @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
                             content = @Content(mediaType = "application/json",
                                     examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(
                             responseCode = "404",
                             description = "NOT FOUND",
@@ -76,6 +86,7 @@ public class FavoriteController {
                                     })),
             })
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<Page<FavoriteResponseDto>> getAllFavorites(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
@@ -97,6 +108,9 @@ public class FavoriteController {
                                         @ExampleObject(name = "Inválid direction", value = "{\"message\": \"Direção de sort inválida\"}"),
                                         @ExampleObject(name = "Inválid sort field", value = "{\"message\": \"Campo sort inválido\"}")
                                     })),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "NOT FOUND",
                                  content = @Content(mediaType = "application/json", 
                                                     examples = {
@@ -105,6 +119,7 @@ public class FavoriteController {
                                                     })),
         })
     @DeleteMapping("/{userId}/{favoriteId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<String> removeFavorite(@PathVariable Long userId, @PathVariable Long favoriteId) {
         favoriteService.removeFavorite(userId, favoriteId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -117,6 +132,9 @@ public class FavoriteController {
                     @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
                             content = @Content(mediaType = "application/json",
                                     examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
+                    @ApiResponse(responseCode = "401", description = "User not authenticate",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
                     @ApiResponse(responseCode = "404", description = "User not found",
                             content = @Content(mediaType = "application/json",
                                     examples = {
@@ -125,6 +143,7 @@ public class FavoriteController {
                                     })),
             })
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<String> removeFavoritesByUserId(@PathVariable Long userId) {
         favoriteService.removeAllFavoritesByUserId(userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
