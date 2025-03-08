@@ -1,12 +1,18 @@
 package com.rickmorty.Models;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "episodes")
 public class EpisodeModel {
 
@@ -14,16 +20,16 @@ public class EpisodeModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false)
-    private String airDate;
+    @Column(name = "local_date", nullable = false)
+    private String localDate;
 
-    @Column(nullable = false)
+    @Column(name = "episode_code", nullable = false, length = 10)
     private String episodeCode;
 
-    @ManyToMany(mappedBy = "episodes")
+    @ManyToMany(mappedBy = "episodes", fetch = FetchType.LAZY)
     private List<CharacterModel> characters;
 
 }

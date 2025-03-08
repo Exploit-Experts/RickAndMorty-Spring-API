@@ -1,12 +1,19 @@
 package com.rickmorty.Models;
 
+import com.rickmorty.enums.LifeStatus;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "characters")
 public class CharacterModel {
 
@@ -14,23 +21,21 @@ public class CharacterModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "character_status", nullable = false)
+    private LifeStatus status;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 15)
     private String species;
 
-    @Column(nullable = false)
-    private String type;
+    @Column(name = "character_type", nullable = false, length = 15)
+    private String characterType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 10)
     private String gender;
-
-    @Column(nullable = false)
-    private String image;
 
     @ManyToOne
     @JoinColumn(name = "location_id")
