@@ -27,7 +27,7 @@ public class EpisodeModel {
     @Column(name = "air_date", nullable = false)
     private LocalDate airDate;
 
-    @Column(name = "episode_code", nullable = false, length = 10)
+    @Column(name = "episode_code", nullable = false, length = 20)
     private String episodeCode;
 
     @ManyToMany(mappedBy = "episodes", fetch = FetchType.LAZY)

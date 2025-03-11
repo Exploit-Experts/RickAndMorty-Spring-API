@@ -8,10 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Data
@@ -24,20 +21,26 @@ public class UserModel implements UserDetails {
 
     private int active = 1;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private String name;
 
+    @Column(nullable = false, length = 50)
     private String surname;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
-    private LocalDateTime date_register;
-    private LocalDateTime date_update;
-    private LocalDateTime deleted_at;
+    @Column(name = "date_register")
+    private LocalDateTime dateRegister;
+
+    @Column(name = "date_update")
+    private LocalDateTime dateUpdate;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     private UserRole role;
 
@@ -48,6 +51,15 @@ public class UserModel implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "favorite_id")
     )
     private Set<FavoriteModel> favorites = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<FavoriteCharacterModel> favoritesCharacters = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<FavoriteEpisodeModel> favoriteEpisodes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<FavoriteLocationModel> favoriteLocations = new ArrayList<>();
 
     public UserModel() {
     }

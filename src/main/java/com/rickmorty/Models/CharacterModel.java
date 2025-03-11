@@ -1,5 +1,6 @@
 package com.rickmorty.Models;
 
+import com.rickmorty.enums.Gender;
 import com.rickmorty.enums.LifeStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -28,14 +29,14 @@ public class CharacterModel {
     @Column(name = "character_status", nullable = false)
     private LifeStatus status;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 50)
     private String species;
 
-    @Column(name = "character_type", nullable = false, length = 15)
+    @Column(name = "character_type", nullable = false, length = 50)
     private String characterType;
 
     @Column(nullable = false, length = 10)
-    private String gender;
+    private Gender gender;
 
     @ManyToOne
     @JoinColumn(name = "location_id")

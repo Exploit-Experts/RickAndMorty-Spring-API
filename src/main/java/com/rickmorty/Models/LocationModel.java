@@ -23,7 +23,7 @@ public class LocationModel {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 15)
+    @Column(nullable = false, length = 50)
     private String dimension;
 
     @Column(name = "location_type", nullable = false, length = 20)
