@@ -36,7 +36,7 @@ public class UserService implements UserServiceInterface {
         userModel.setName(userDto.name());
         userModel.setSurname(userDto.surname());
         userModel.setEmail(userDto.email());
-        userModel.setDate_register(LocalDateTime.now());
+        userModel.setDateRegister(LocalDateTime.now());
         userModel.setRole(UserRole.USER);
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(userDto.password());
@@ -66,7 +66,7 @@ public class UserService implements UserServiceInterface {
         user.setSurname(userDto.surname());
         user.setEmail(userDto.email());
         user.setPassword(userDto.password());
-        user.setDate_update(LocalDateTime.now());
+        user.setDateUpdate(LocalDateTime.now());
         userRepository.save(user);
     }
 
@@ -101,7 +101,7 @@ public class UserService implements UserServiceInterface {
         if (isUpdated) {
             validateFieldsPatch(userPatchDto, result);
 
-            user.setDate_update(LocalDateTime.now());
+            user.setDateUpdate(LocalDateTime.now());
             userRepository.save(user);
         }
     }
@@ -114,7 +114,7 @@ public class UserService implements UserServiceInterface {
 
         UserModel userModel = optionalUser.get();
         userModel.setActive(0);
-        userModel.setDeleted_at(LocalDateTime.now());
+        userModel.setDeletedAt(LocalDateTime.now());
         userRepository.save(userModel);
     }
 
