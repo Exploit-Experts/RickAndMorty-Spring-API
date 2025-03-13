@@ -23,6 +23,9 @@ public class Config {
     private String apiSecret;
 
     public boolean isAllowSendImages() {
-        return cloudName != null && apiKey != null && apiSecret != null;
+        return this.cloudName != null && !this.cloudName.isEmpty()
+                && this.apiKey != null && !this.apiKey.isEmpty()
+                && this.apiSecret != null && !this.apiSecret.isEmpty();
     }
+
 }
