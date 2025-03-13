@@ -35,6 +35,7 @@ public class CharacterModel {
     @Column(name = "character_type", nullable = false, length = 50)
     private String characterType;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Gender gender;
 
@@ -49,5 +50,8 @@ public class CharacterModel {
             inverseJoinColumns = @JoinColumn(name = "episode_id")
     )
     private List<EpisodeModel> episodes;
+
+    @Column(name = "is_avatar_uploaded")
+    private boolean avatarUploaded = false;
 
 }

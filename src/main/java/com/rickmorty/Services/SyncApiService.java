@@ -2,16 +2,11 @@ package com.rickmorty.Services;
 
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.CharacterDto;
-import com.rickmorty.DTO.LocationDto;
 import com.rickmorty.Models.CharacterModel;
-import com.rickmorty.Models.LocationModel;
 import com.rickmorty.Repository.CharacterRepository;
 import com.rickmorty.Repository.EpisodeRepository;
 import com.rickmorty.Repository.LocationRepository;
 import com.rickmorty.Utils.Config;
-import com.rickmorty.enums.Gender;
-import com.rickmorty.enums.LifeStatus;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -33,24 +28,28 @@ public class SyncApiService {
     private EpisodeRepository episodeRepository;
 
     @Autowired
-    Config config;
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private Config config;
 
     private final RestTemplate restTemplate;
+    @Autowired
+    private CharacterRepository characterRepository;
 
     public SyncApiService() {
         restTemplate = new RestTemplate();
     }
 
-    @Scheduled(fixedRate = 86400000)
-    @Transactional
+    @Scheduled(fixedDelay = 259200000)
     public void scheduledSync() {
         System.out.println("Sincronização iniciada");
         syncCharacters(null);
         System.out.println("Sincronização automática concluída!");
     }
 
-    @Transactional
-    protected void syncCharacters(String url) {
+    private void syncCharacters(String url) {
+        System.out.println("Sincronização de personagens iniciada: " + url);
         if (url == null) {
             url = config.getApiBaseUrl() + "/character";
         }
@@ -68,19 +67,28 @@ public class SyncApiService {
         }
 
         for (CharacterDto dto : charactersList.results()) {
-            CharacterModel character = this.characterService.saveCharacterByDto(dto);
-            if (character != null) {
-                // implementar logica para setar a localização
+            try {
+                CharacterModel character = this.characterService.saveCharacterByDto(dto);
+                if (character != null) {
+                    if (config.isAllowSendImages() && !character.isAvatarUploaded()) {
+                        cloudinaryService.uploadFileFromUrl(
+                                config.getApiBaseUrl() + "/character/avatar/" + character.getId() + ".jpeg",
+                                character.getId(),
+                                "characters"
+                        );
+                        character.setAvatarUploaded(true);
+                        characterRepository.save(character);
+                    }
+
+                    System.out.println("Personagem: " + character.getName() + " salvo!");
+                }
+            } catch (Exception e) {
+                System.err.println("Erro ao salvar personagem: " + dto.name() + " - " + e.getMessage());
             }
         }
 
         if (charactersList.info().next() != null) {
             syncCharacters(charactersList.info().next());
         }
-    }
-
-    private Long extractIdFromUrl(String url) {
-        String[] parts = url.split("/");
-        return Long.valueOf(parts[parts.length - 1]);
     }
 }

@@ -214,7 +214,6 @@ public class CharacterService implements CharacterServiceInterface {
         Optional<CharacterModel> character = characterRepository.findById(dto.id());
         if (character.isEmpty()) {
             CharacterModel model = new CharacterModel();
-            model.setId((long) dto.id());
             model.setName(dto.name());
             model.setSpecies(dto.species());
             model.setCharacterType(dto.type());
@@ -226,7 +225,7 @@ public class CharacterService implements CharacterServiceInterface {
             return characterRepository.save(model);
         }
 
-        return character.get();
+        return null;
     }
 
     private LifeStatus convertLifeStatus(String status) {
