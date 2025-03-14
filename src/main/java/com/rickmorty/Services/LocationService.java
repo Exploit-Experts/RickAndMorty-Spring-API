@@ -144,12 +144,14 @@ public class LocationService implements LocationServiceInterface {
     }
     public LocationModel saveLocationByDto(LocationDto dto) {
         Optional<LocationModel> locationOpt = locationRepository.findById(dto.id());
+
         if (locationOpt.isEmpty()) {
             LocationModel model = new LocationModel();
             model.setName(dto.name());
             model.setDimension(dto.dimension());
             model.setLocationType(dto.type());
-
+            model.setCharacters(null);
+            model.setId(dto.id());
             return locationRepository.save(model);
         }
 
