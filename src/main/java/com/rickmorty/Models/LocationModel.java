@@ -26,7 +26,7 @@ public class LocationModel {
     @Column(nullable = false, length = 50)
     private String dimension;
 
-    @Column(name = "location_type", nullable = false, length = 20)
+    @Column(name = "location_type", nullable = false, length = 35)
     private String LocationType;
 
     @OneToMany(mappedBy = "locationModel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

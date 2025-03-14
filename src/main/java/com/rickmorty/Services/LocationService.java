@@ -5,16 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.InfoDto;
 import com.rickmorty.DTO.LocationDto;
+import com.rickmorty.Models.LocationModel;
+import com.rickmorty.Repository.LocationRepository;
 import com.rickmorty.Utils.Config;
 import com.rickmorty.exceptions.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import com.rickmorty.enums.SortLocation;
 import com.rickmorty.interfaces.LocationServiceInterface;
@@ -23,15 +27,16 @@ import com.rickmorty.interfaces.LocationServiceInterface;
 @Service
 public class LocationService implements LocationServiceInterface {
 
-    @Autowired
-    Config config;
-
+    private final Config config;
     private final ObjectMapper objectMapper;
     private final HttpClient client;
+    private final LocationRepository locationRepository;
 
-    public LocationService(ObjectMapper objectMapper) {
+    public LocationService(ObjectMapper objectMapper, LocationRepository locationRepository, Config config) {
         this.objectMapper = objectMapper;
         this.client = HttpClient.newHttpClient();
+        this.locationRepository = locationRepository;
+        this.config = config;
     }
 
     @Override
@@ -137,5 +142,19 @@ public class LocationService implements LocationServiceInterface {
                 location.url().replace(config.getApiBaseUrl()+"/location/", config.getLocalBaseUrl() + "/locations/")
         );
     }
+    public LocationModel saveLocationByDto(LocationDto dto) {
+        Optional<LocationModel> locationOpt = locationRepository.findById(dto.id());
+        if (locationOpt.isEmpty()) {
+            LocationModel model = new LocationModel();
+            model.setName(dto.name());
+            model.setDimension(dto.dimension());
+            model.setLocationType(dto.type());
+
+            return locationRepository.save(model);
+        }
+
+        return null;
+    }
+
 
 }
