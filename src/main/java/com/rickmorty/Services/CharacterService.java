@@ -214,6 +214,7 @@ public class CharacterService implements CharacterServiceInterface {
         Optional<CharacterModel> character = characterRepository.findById(dto.id());
         if (character.isEmpty()) {
             CharacterModel model = new CharacterModel();
+            model.setId(dto.id());
             model.setName(dto.name());
             model.setSpecies(dto.species());
             model.setCharacterType(dto.type());
