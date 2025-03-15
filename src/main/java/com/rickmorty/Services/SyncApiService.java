@@ -2,10 +2,11 @@ package com.rickmorty.Services;
 
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.CharacterDto;
+import com.rickmorty.DTO.EpisodeDto;
 import com.rickmorty.Models.CharacterModel;
 import com.rickmorty.DTO.LocationDto;
+import com.rickmorty.Models.EpisodeModel;
 import com.rickmorty.Models.LocationModel;
-import com.rickmorty.Repository.EpisodeRepository;
 import com.rickmorty.Repository.LocationRepository;
 import com.rickmorty.Utils.Config;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.rickmorty.Repository.CharacterRepository;
-
-import java.util.Optional;
 
 @Service
 public class SyncApiService {
@@ -40,7 +39,7 @@ public class SyncApiService {
     private CharacterRepository characterRepository;
 
     @Autowired
-    private EpisodeRepository episodeRepository;
+    private EpisodeService episodeService;
 
     @Autowired
     private LocationRepository locationRepository;
@@ -54,7 +53,41 @@ public class SyncApiService {
         System.out.println("Sincronização iniciada");
         syncLocations(null);
         syncCharacters(null);
+        syncEpisode(null);
         System.out.println("Sincronização automática concluída!");
+    }
+
+    private void syncEpisode(String url) {
+        if (url == null) {
+            url = config.getApiBaseUrl() + "/episode";
+        }
+
+        System.out.println("Sincronização de episódios iniciada: " + url);
+
+        ResponseEntity<ApiResponseDto<EpisodeDto>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<ApiResponseDto<EpisodeDto>>() {
+                }
+        );
+        ApiResponseDto<EpisodeDto> episodeList = response.getBody();
+        if (episodeList == null || episodeList.results()==null) {
+            throw new RuntimeException("Falha ao obter dados da API.");
+        }
+        for (EpisodeDto episode : episodeList.results()) {
+            try {
+                EpisodeModel episodeModel = this.episodeService.saveEpisodeByDto(episode);
+                if (episodeModel != null) {
+                    System.out.println("Episodio: "+ episodeModel.getName() + " salva!");
+                }
+            }catch (Exception e) {
+                System.err.println("Erro ao salvar episódio: " + episode.name() + " - " + e.getMessage());
+            }
+        }
+        if (episodeList.info().next() != null) {
+            syncEpisode(episodeList.info().next());
+        }
     }
 
     private void syncLocations(String url) {
