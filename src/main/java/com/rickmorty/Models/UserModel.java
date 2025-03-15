@@ -42,6 +42,12 @@ public class UserModel implements UserDetails {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "reset_password_code", length = 6)
+    private String resetPasswordCode;
+
+    @Column(name = "reset_password_expiration")
+    private LocalDateTime resetPasswordExpiration;
+
     private UserRole role;
 
     @ManyToMany
