@@ -66,6 +66,7 @@ public class TokenService {
     private Instant genExpirationDate() {
         return LocalDateTime.now().plusDays(7).toInstant(ZoneOffset.of("-03:00"));
     }
+
     public String validateToken(String token){
         try {
             Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
@@ -83,6 +84,21 @@ public class TokenService {
 
         } catch (JWTVerificationException exception) {
             throw new RuntimeException("Invalid token", exception);
+        }
+    }
+
+    public Long extractUserId(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
+            DecodedJWT decodedJWT = JWT.require(algorithm)
+                    .withIssuer("api-v1-auth")
+                    .build()
+                    .verify(token);
+
+            return decodedJWT.getClaim("id").asLong();
+
+        } catch (JWTVerificationException exception) {
+            throw new RuntimeException("Token inválido ou expirado", exception);
         }
     }
 }

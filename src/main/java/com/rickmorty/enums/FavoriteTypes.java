@@ -1,6 +1,6 @@
 package com.rickmorty.enums;
 
-public enum ItemType {
+public enum FavoriteTypes {
     EPISODE,
     CHARACTER,
     LOCATION

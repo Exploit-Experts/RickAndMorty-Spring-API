@@ -71,12 +71,12 @@ public class LocationService implements LocationServiceInterface {
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.body().isEmpty() || response.statusCode() == 404) throw new LocationNotFoundException("Localização não encontrada");
+            if (response.body().isEmpty() || response.statusCode() == 404) throw new LocationNotFoundException();
 
             LocationDto location = objectMapper.readValue(response.body(), LocationDto.class);
             return rewriteLocationDto(location);
         } catch (LocationNotFoundException ex) {
-            throw new LocationNotFoundException(ex.getMessage());
+            throw new LocationNotFoundException();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

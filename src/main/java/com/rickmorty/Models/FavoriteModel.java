@@ -1,6 +1,6 @@
 package com.rickmorty.Models;
 
-import com.rickmorty.enums.ItemType;
+import com.rickmorty.enums.FavoriteTypes;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.HashSet;
@@ -19,7 +19,7 @@ public class FavoriteModel {
     private Long apiId;
 
     @Enumerated(EnumType.STRING)
-    private ItemType itemType;
+    private FavoriteTypes favoriteTypes;
 
     @ManyToMany(mappedBy = "favorites", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<UserModel> users = new HashSet<>();

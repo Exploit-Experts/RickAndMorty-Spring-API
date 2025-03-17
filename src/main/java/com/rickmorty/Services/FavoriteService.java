@@ -1,15 +1,17 @@
 package com.rickmorty.Services;
 
 import com.rickmorty.DTO.FavoriteResponseDto;
-import com.rickmorty.Models.FavoriteModel;
-import com.rickmorty.Models.UserModel;
-import com.rickmorty.Repository.FavoriteRepository;
-import com.rickmorty.Repository.UserRepository;
+import com.rickmorty.DTO.responses.CharacterResponseDto;
+import com.rickmorty.DTO.responses.EpisodeResponseDto;
+import com.rickmorty.DTO.responses.LocationResponseDto;
+import com.rickmorty.Models.*;
+import com.rickmorty.Repository.*;
+import com.rickmorty.enums.FavoriteTypes;
 import com.rickmorty.enums.SortFavorite;
+import com.rickmorty.enums.UserRole;
 import com.rickmorty.exceptions.*;
 import com.rickmorty.interfaces.FavoriteServiceInterface;
 import com.rickmorty.DTO.FavoriteDto;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,9 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
+
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,124 +31,187 @@ public class FavoriteService implements FavoriteServiceInterface {
     private FavoriteRepository favoriteRepository;
 
     @Autowired
+    private FavoriteCharacterRepository favoriteCharacterRepository;
+
+    @Autowired
+    private FavoriteLocationRepository favoriteLocationRepository;
+
+    @Autowired
+    private FavoriteEpisodeRepository favoriteEpisodeRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    EpisodeService episodeService;
+    private TokenService tokenService;
 
     @Autowired
-    CharacterService characterService;
+    private CharacterRepository characterRepository;
 
     @Autowired
-    LocationService locationService;
+    private EpisodeRepository episodeRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
 
     @Override
-    @Transactional
-    public void create(FavoriteDto favoriteDto, BindingResult result) {
-        validateFavorite(favoriteDto, result);
-
-        FavoriteModel favorite;
+    public void create(String token, FavoriteDto favoriteDto, BindingResult result) {
         try {
-            Long id = favoriteDto.userId();
-            UserModel user = userRepository.findByIdAndActive(id, 1)
+            Long favoriteId = favoriteDto.favoriteId();
+            UserModel user = userRepository.findByIdAndActive(tokenService.extractUserId(token), 1)
                     .orElseThrow(UserNotFoundException::new);
 
-            Optional<FavoriteModel> favoriteOptional = favoriteRepository.findByApiIdAndItemType(favoriteDto.apiId(), favoriteDto.itemType());
-
-            if (favoriteOptional.isEmpty()) {
-                favorite = new FavoriteModel();
-                favorite.setApiId(favoriteDto.apiId());
-                favorite.setItemType(favoriteDto.itemType());
-
-                favorite = favoriteRepository.save(favorite);
-            } else {
-                favorite = favoriteOptional.get();
+            switch (favoriteDto.favoriteType()) {
+                case FavoriteTypes.CHARACTER -> saveCharacterFavorite(favoriteId, user);
+                case FavoriteTypes.EPISODE -> saveEpisodeFavorite(favoriteId, user);
+                case FavoriteTypes.LOCATION -> saveLocationFavorite(favoriteId, user);
             }
-
-            Long existsFavoriteAndUserSetted = favoriteRepository.existsByUserIdAndFavoriteId(user.getId(), favorite.getId());
-            if (existsFavoriteAndUserSetted != 0) throw new FavoriteAlreadyExists();
-
-            favoriteRepository.addFavoriteToUser(user.getId(), favorite.getId());
-        }catch (NumberFormatException e){
-            throw new InvalidIdException();
+        } catch (Exception e){
+            throw new RuntimeException(e.getMessage());
         }
     }
 
     @Override
-    public Page<FavoriteResponseDto> getAllFavorites(Long userId, int page, SortFavorite sort) {
-        Sort.Direction direction;
+    public Page<?> getAllFavorites(
+            String token,
+            Long userId,
+            FavoriteTypes favoriteType,
+            int page,
+            SortFavorite sort
+    ) {
         try {
+            Sort.Direction direction;
             direction = Sort.Direction.fromString(sort.toString().toUpperCase());
+            Sort sortOrder = Sort.by(direction, "id");
+            Pageable pageable = PageRequest.of(page, 10, sortOrder);
+
+            Long resolvedUserId = resolveUserId(token, userId);
+
+            switch (favoriteType){
+                case CHARACTER -> {
+                    return getAllCharactersFavorites(resolvedUserId, pageable);
+                }
+                case EPISODE -> {
+                    return getAllEpisodesFavorites(resolvedUserId, pageable);
+                }
+                case LOCATION -> {
+                    return getAllLocationsFavorites(resolvedUserId, pageable);
+                }
+                default -> {
+                    throw new InvalidParameterException("Invalid favorite type");
+                }
+            }
         } catch (IllegalArgumentException e) {
             throw new InvalidParameterException("Direção de sort inválida: " + sort);
         }
-
-        Sort sortOrder = Sort.by(direction, "id");
-        Pageable pageable = PageRequest.of(page, 10, sortOrder);
-
-        Optional<UserModel> user = userRepository.findByIdAndActive(userId, 1);
-        if (user.isEmpty()) throw new UserNotFoundException();
-
-        Page<FavoriteModel> favoritesPage = favoriteRepository.findFavoriteByUserId(userId, pageable);
-        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui favoritos cadastrados");
-
-        return favoritesPage.map(favoriteModel -> new FavoriteResponseDto(
-                favoriteModel.getId(),
-                favoriteModel.getApiId(),
-                favoriteModel.getItemType(),
-                userId
-        ));
     }
 
     @Override
-    @Transactional
-    public void removeFavorite(Long userId, Long favoriteId) {
-        if (userId == null || userId <= 0) throw new InvalidParameterException("Parâmetro userId inválido. Deve ser um número positivo maior que zero");
-        if (favoriteId == null || favoriteId <= 0) throw new InvalidParameterException("Parâmetro favoriteId inválido. Deve ser um número positivo maior que zero");
+    public void removeFavorite(String token, Long userId, Long favoriteId) {
+        Long resolvedUserId = resolveUserId(token, userId);
 
-        Optional<UserModel> user = userRepository.findByIdAndActive(userId, 1);
-        if (user.isEmpty()) throw new UserNotFoundException();
-
-        Long existsFavorite = favoriteRepository.existsByUserIdAndFavoriteId(userId, favoriteId);
+        Long existsFavorite = favoriteRepository.existsByUserIdAndFavoriteId(resolvedUserId, favoriteId);
         if (existsFavorite == 0) throw new FavoriteNotFound("Favorito não cadastrado");
 
-        favoriteRepository.deleteByUserIdAndFavoriteId(userId, favoriteId);
+        favoriteRepository.deleteByUserIdAndFavoriteId(resolvedUserId, favoriteId);
     }
 
     @Override
-    @Transactional
-    public void removeAllFavoritesByUserId(Long userId) {
-        Optional<UserModel> user = userRepository.findByIdAndActive(userId, 1);
-        if (user.isEmpty()) throw new UserNotFoundException();
+    public void removeAllFavoritesByUserId(String token, Long userId) {
+        Long resolvedUserId = resolveUserId(token, userId);
 
-        Long existsFavorite = favoriteRepository.existsByUserId(userId);
+        Long existsFavorite = favoriteRepository.existsByUserId(resolvedUserId);
         if (existsFavorite == 0) throw new FavoriteNotFound("O usuário não tem favoritos cadastrados");
 
-        favoriteRepository.deleteAllByUserId(userId);
+        favoriteRepository.deleteAllByUserId(resolvedUserId);
     }
 
-    private void validateFavorite(FavoriteDto favoriteDto, BindingResult result) {
-        if (favoriteDto.userId() == null || favoriteDto.userId() <= 0) throw new InvalidParameterException("Parâmetro userId inválido. Deve ser um número positivo maior que zero");
-        if (favoriteDto.apiId() == null || favoriteDto.apiId() <= 0) throw new InvalidParameterException("Parâmetro apiId inválido. Deve ser um número positivo maior que zero");
+    private void saveCharacterFavorite(Long characterId, UserModel user) {
+        FavoriteCharacterModel favorite = new FavoriteCharacterModel();
+        CharacterModel character = characterRepository.findById(characterId)
+                .orElseThrow(CharacterNotFoundException::new);
 
-        switch (favoriteDto.itemType().name().toLowerCase()){
-            case "episode":
-                if (episodeService.findEpisodeById(favoriteDto.apiId()) == null) throw new EpisodeNotFoundException();
-                break;
-            case "character":
-                if (characterService.findACharacterById(favoriteDto.apiId()) == null) throw new CharacterNotFoundException();
-                break;
-            case "location":
-                if (locationService.getLocationById(favoriteDto.apiId()) == null) throw new LocationNotFoundException("Location não encontrado para o ID");
-                break;
-            default: throw new InvalidParameterException("itemType inválido. valores aceitos: (LOCATION, EPISODE, CHARACTER)");
-        }
+        favorite.setUser(user);
+        favorite.setCharacter(character);
+        characterRepository.save(character);
+    }
 
-        if (result.hasErrors()) {
-            List<String> errors = result.getFieldErrors().stream()
-                    .map(FieldError::getDefaultMessage)
-                    .collect(Collectors.toList());
-            throw new ValidationErrorException(errors);
-        }
+    private void saveEpisodeFavorite(Long episodeId, UserModel user) {
+        FavoriteEpisodeModel favorite = new FavoriteEpisodeModel();
+        EpisodeModel episode = episodeRepository.findById(episodeId)
+                .orElseThrow(EpisodeNotFoundException::new);
+
+        favorite.setUser(user);
+        favorite.setEpisode(episode);
+        episodeRepository.save(episode);
+    }
+
+    private void saveLocationFavorite(Long locationId, UserModel user) {
+        FavoriteLocationModel favorite = new FavoriteLocationModel();
+        LocationModel location = locationRepository.findById(locationId)
+                .orElseThrow(LocationNotFoundException::new);
+
+        favorite.setUser(user);
+        favorite.setLocation(location);
+        locationRepository.save(location);
+    }
+
+    private Long resolveUserId(String token, Long userId) {
+        UserModel user = userRepository.findByIdAndActive(tokenService.extractUserId(token), 1)
+                .orElseThrow(UserNotFoundException::new);
+
+        return user.getRole() == UserRole.USER
+                ? user.getId()
+                : userId;
+    }
+
+    private Page<CharacterResponseDto> getAllCharactersFavorites(Long userId, Pageable pageable) {
+        Page<FavoriteCharacterModel> favoritesPage = favoriteCharacterRepository.findByUserId(userId, pageable);
+        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui favoritos cadastrados");
+
+        return favoritesPage.map(favorite -> {
+            CharacterModel character = favorite.getCharacter();
+            return new CharacterResponseDto(
+                    character.getId(),
+                    character.getName(),
+                    character.getStatus(),
+                    character.getSpecies(),
+                    character.getCharacterType(),
+                    character.getGender(),
+                    character.getLocationModel()
+            );
+        });
+    }
+
+    private Page<LocationResponseDto> getAllLocationsFavorites(Long userId, Pageable pageable) {
+        Page<FavoriteLocationModel> favoritesPage = favoriteLocationRepository.findByUserId(userId, pageable);
+        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui localizações nos favoritos");
+
+        return favoritesPage.map(favorite -> {
+            LocationModel location = favorite.getLocation();
+            return new LocationResponseDto(
+                    location.getId(),
+                    location.getName(),
+                    location.getLocationType(),
+                    location.getDimension(),
+                    location.getCharacters()
+            );
+        });
+    }
+
+    private Page<EpisodeResponseDto> getAllEpisodesFavorites(Long userId, Pageable pageable) {
+        Page<FavoriteEpisodeModel> favoritesPage = favoriteEpisodeRepository.findByUserId(userId, pageable);
+        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui localizações nos favoritos");
+
+        return favoritesPage.map(favorite -> {
+            EpisodeModel episode = favorite.getEpisode();
+            return new EpisodeResponseDto(
+                    episode.getId(),
+                    episode.getName(),
+                    episode.getEpisodeCode(),
+                    episode.getAirDate(),
+                    episode.getCharacters()
+            );
+        });
     }
 }
