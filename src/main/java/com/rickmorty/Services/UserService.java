@@ -173,4 +173,9 @@ public class UserService implements UserServiceInterface {
     public Optional<UserModel> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    @Transactional
+    public void updateUser(UserModel user) {
+        userRepository.save(user);
+    }
 }
