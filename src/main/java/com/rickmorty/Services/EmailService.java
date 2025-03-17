@@ -30,7 +30,7 @@ public class EmailService {
             helper.setText(htmlContent, true);
             mailSender.send(message);
         } catch (MessagingException e) {
-            // Tratar exceção
+            e.printStackTrace();
         }
     }
 
