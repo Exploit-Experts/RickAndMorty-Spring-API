@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -30,6 +31,6 @@ public class EpisodeModel {
     private String episodeCode;
 
     @ManyToMany(mappedBy = "episodes", fetch = FetchType.LAZY)
-    private List<CharacterModel> characters;
+    private List<CharacterModel> characters = new ArrayList<>();
 
 }
