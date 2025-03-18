@@ -26,7 +26,7 @@ public class AuthService {
     private TokenService tokenService;
     private EmailService emailService;
 
-    AuthService(AuthenticationManager authenticationManager, UserService userService, TokenService tokenService, EmailService emailService) {
+    AuthService(AuthenticationManager authenticationManager, UserService userService, TokenService tokenService,EmailService emailService) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.tokenService = tokenService;
@@ -80,15 +80,18 @@ public class AuthService {
         Optional<UserModel> userOpt = userService.findByEmail(email);
         if (userOpt.isPresent()) {
             UserModel user = userOpt.get();
-            String resetCode = RandomCodeGenService.generateRandomCode(6);
+            if (user.isEnabled()) {
+                String resetCode = RandomCodeGenService.generateRandomCode(6);
 
-            user.setResetPasswordCode(resetCode);
-            user.setResetPasswordExpiration(LocalDateTime.now().plusMinutes(5));
-            user.setDateUpdate(LocalDateTime.now());
-            userService.updateUser(user);
+                user.setResetPasswordCode(resetCode);
+                user.setResetPasswordExpiration(LocalDateTime.now().plusMinutes(5));
+                user.setDateUpdate(LocalDateTime.now());
+                userService.updateUser(user);
 
-            emailService.sendResetPasswordEmail(email, resetCode);
-        } 
+                emailService.sendResetPasswordEmail(email, resetCode);
+            }
+
+        }
     }
 
     public void resetPassword(String email, String code, String password, String confirmPassword) {
@@ -102,6 +105,10 @@ public class AuthService {
         }
 
         UserModel user = userOpt.get();
+
+        if (!user.isEnabled()) {
+            throw new UserInactiveException("Usuário inativo");
+        }
 
         if (user.getResetPasswordCode() == null || !user.getResetPasswordCode().equals(code)) {
             throw new IllegalArgumentException("Código de redefinição inválido");
