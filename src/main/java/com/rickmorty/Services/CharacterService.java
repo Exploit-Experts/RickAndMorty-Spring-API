@@ -30,6 +30,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -245,5 +246,15 @@ public class CharacterService implements CharacterServiceInterface {
             return Gender.FEMALE;
         }
         return Gender.UNKNOWN;
+    }
+
+    public List<CharacterModel> findByIds(List<Long> characterIds) {
+        List<CharacterModel> listCharacter = new ArrayList<>();
+        for (Long characterId : characterIds) {
+            if (characterRepository.findById(characterId).isPresent()) {
+                listCharacter.add(characterRepository.findById(characterId).get());
+            }
+        }
+        return listCharacter;
     }
 }

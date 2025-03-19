@@ -42,7 +42,7 @@ public class CharacterModel {
     @JoinColumn(name = "location_id")
     private LocationModel locationModel;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(
             name = "character_episodes",
             joinColumns = @JoinColumn(name = "character_id"),

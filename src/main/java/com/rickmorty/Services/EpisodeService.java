@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.EpisodeDto;
 import com.rickmorty.DTO.InfoDto;
+import com.rickmorty.Models.EpisodeModel;
+import com.rickmorty.Repository.EpisodeRepository;
 import com.rickmorty.Utils.Config;
 import com.rickmorty.enums.SortEpisode;
 import com.rickmorty.exceptions.EpisodeNotFoundException;
@@ -19,7 +21,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,6 +35,8 @@ public class EpisodeService implements EpisodeServiceInterface {
 
     @Autowired
     Config config;
+    @Autowired
+    private EpisodeRepository episodeRepository;
 
     @Override
     public ApiResponseDto<EpisodeDto> findAllEpisodes(Integer page, String name, String episode, SortEpisode sort) {
@@ -159,4 +166,29 @@ public class EpisodeService implements EpisodeServiceInterface {
                                 config.getLocalBaseUrl() + "/characters/"))
                         .collect(Collectors.toList()));
     }
+
+    public EpisodeModel saveEpisodeByDto(EpisodeDto episode) {
+        Optional<EpisodeModel> episodeOpt = episodeRepository.findById(episode.id());
+
+        if (episodeOpt.isEmpty()) {
+            EpisodeModel model = new EpisodeModel();
+            model.setId(episode.id());
+            model.setName(episode.name());
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH);
+
+            LocalDate airDate = null;
+            try {
+                airDate = LocalDate.parse(episode.releaseDate(), formatter);
+            } catch (Exception e) {
+                System.err.println("Erro ao converter data do episódio: " + episode.name() + " - " + episode.releaseDate());
+            }
+
+            model.setAirDate(airDate);
+            model.setEpisodeCode(episode.episodeCode());
+
+            return episodeRepository.save(model);
+        }
+
+        return null;    }
 }
