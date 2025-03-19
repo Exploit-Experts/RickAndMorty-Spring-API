@@ -31,7 +31,7 @@ public class CharacterModel {
     @Column(nullable = false, length = 30)
     private String species;
 
-    @Column(name = "character_type", nullable = false, length = 15)
+    @Column(name = "character_type", nullable = false, length = 50)
     private String characterType;
 
     @Column(nullable = false, length = 10)
