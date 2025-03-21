@@ -45,8 +45,8 @@ public class EpisodeService implements EpisodeServiceInterface {
                 throw new InvalidParameterException("Parâmetro page incorreto, deve ser um número inteiro maior ou igual a 1");
             }
 
-            int pageNumber = page != null ? page - 1 : 0; // Spring Data JPA usa indexação baseada em 0
-            Pageable pageable = PageRequest.of(pageNumber, 20); // 20 itens por página
+            int pageNumber = page != null ? page - 1 : 0;
+            Pageable pageable = PageRequest.of(pageNumber, 20);
 
             Page<EpisodeModel> episodePage;
             if (name != null && episode != null) {
@@ -69,8 +69,8 @@ public class EpisodeService implements EpisodeServiceInterface {
                     .collect(Collectors.toList());
 
             InfoDto infoDto = new InfoDto(
-                    episodePage.getTotalElements(), // long
-                    episodePage.getTotalPages(), // long
+                    episodePage.getTotalElements(),
+                    episodePage.getTotalPages(),
                     episodePage.hasNext() ? String.valueOf(page + 1) : null,
                     episodePage.hasPrevious() ? String.valueOf(page - 1) : null
             );
