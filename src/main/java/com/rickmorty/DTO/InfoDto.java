@@ -6,9 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InfoDto(
         @JsonProperty("count")
-        int count,
+        long count,
         @JsonProperty("pages")
-        int pages,
+        long pages,
         @JsonProperty("next")
         String next,
         @JsonProperty("prev")
