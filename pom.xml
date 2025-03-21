@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.rickmorty</groupId>
 	<artifactId>rickMorty</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.2.3-SNAPSHOT</version>
 	<name>rickMorty</name>
 	<description>Rick and Morty API Client Project</description>
 	<url/>
