@@ -7,7 +7,7 @@ import com.rickmorty.DTO.CharacterDto;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CharacterDto(
-        @JsonProperty("id") int id,
+        @JsonProperty("id") Long id,
         @JsonProperty("name") String name,
         @JsonProperty("status") String status,
         @JsonProperty("species") String species,
@@ -16,5 +16,4 @@ public record CharacterDto(
         @JsonProperty("image") String image,
         @JsonProperty("episode") List<String> episode,
         @JsonProperty("location") LocationCharacterDto location
-
 ) {}
