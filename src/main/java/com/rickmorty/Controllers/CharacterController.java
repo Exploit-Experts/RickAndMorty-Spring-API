@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("api/v1/characters")
 public class CharacterController {
@@ -38,16 +40,16 @@ public class CharacterController {
                         })),
         })
         @GetMapping
-        public ResponseEntity<ApiResponseDto<CharacterDto>> getAllCharacters(
-                        @RequestParam(required = false) Integer page,
-                        @RequestParam(required = false) String name,
-                        @RequestParam(required = false) LifeStatus status,
-                        @RequestParam(required = false) Species species,
-                        @RequestParam(required = false) String type,
-                        @RequestParam(required = false) Gender gender,
-                        @RequestParam(required = false) SortOrder sort) {
-                ApiResponseDto<CharacterDto> characters = characterService.findAllCharacters(page, name, status,
-                                species, type, gender, sort);
+        public ResponseEntity<Map<String, Object>> getAllCharacters(
+                @RequestParam(required = false) Integer page,
+                @RequestParam(required = false) String name,
+                @RequestParam(required = false) LifeStatus status,
+                @RequestParam(required = false) Species species,
+                @RequestParam(required = false) String type,
+                @RequestParam(required = false) Gender gender,
+                @RequestParam(required = false) SortOrder sort) {
+
+                Map<String, Object> characters = characterService.findAllCharacters(page, name, status, species, type, gender, sort);
                 return ResponseEntity.ok(characters);
         }
 
@@ -64,6 +66,7 @@ public class CharacterController {
                 CharacterDto character = characterService.findACharacterById(id);
                 return new ResponseEntity<>(character, HttpStatus.OK);
         }
+
 
         @Operation(summary = "Get character avatar", description = "Get the avatar of a specific character by its ID", responses = {
                         @ApiResponse(responseCode = "200", description = "Avatar found", content = @Content(mediaType = "image/jpeg")),

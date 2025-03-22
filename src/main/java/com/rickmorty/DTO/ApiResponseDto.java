@@ -10,5 +10,7 @@ public record ApiResponseDto<T>(
         InfoDto info,
         @JsonProperty("results")
         List<T> results
-) {}
+) {
+
+}
 

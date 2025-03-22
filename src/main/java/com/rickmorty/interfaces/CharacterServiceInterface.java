@@ -8,9 +8,11 @@ import com.rickmorty.enums.SortOrder;
 import com.rickmorty.enums.Species;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Map;
+
 public interface CharacterServiceInterface {
-  ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species,
-      String type, Gender gender, SortOrder sort);
+  Map<String, Object> findAllCharacters(Integer page, String name, LifeStatus status, Species species,
+                                        String type, Gender gender, SortOrder sort);
 
   CharacterDto findACharacterById(Long id);
 

@@ -26,7 +26,7 @@ public class CharacterModel {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "character_status", nullable = false)
+    @Column(name = "character_status", nullable = false, length = 50)
     private LifeStatus status;
 
     @Column(nullable = false, length = 50)

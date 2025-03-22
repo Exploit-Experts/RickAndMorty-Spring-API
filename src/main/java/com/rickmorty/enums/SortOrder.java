@@ -4,6 +4,6 @@ public enum SortOrder {
     NAME_ASC,
     NAME_DESC,
     STATUS_ASC,
-    STATUS_DESC
+    ASC, STATUS_DESC
 }
 
