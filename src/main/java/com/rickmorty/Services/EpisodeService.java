@@ -18,8 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -113,7 +115,7 @@ public class EpisodeService implements EpisodeServiceInterface {
 
     private EpisodeDto convertToDto(EpisodeModel episode) {
         return new EpisodeDto(
-                episode.getId().intValue(),
+                episode.getId(),
                 episode.getName(),
                 episode.getEpisodeCode(),
                 episode.getAirDate().toString(),
@@ -140,5 +142,61 @@ public class EpisodeService implements EpisodeServiceInterface {
             default:
                 return 0;
         }
+    }
+
+    private InfoDto rewriteInfoDto(InfoDto originalInfo) {
+        String nextUrl = Optional.ofNullable(originalInfo.next())
+                .map(next -> next.replace(config.getApiBaseUrl()+ "/episode",
+                        config.getLocalBaseUrl() + "/episodes"))
+                .orElse(null);
+    
+        String prevUrl = Optional.ofNullable(originalInfo.prev())
+                .map(prev -> prev.replace(config.getApiBaseUrl() + "/episode",
+                        config.getLocalBaseUrl() + "/episodes"))
+                .orElse(null);
+    
+        return new InfoDto(
+                originalInfo.count(),
+                originalInfo.pages(),
+                nextUrl,
+                prevUrl);
+    }
+
+    private EpisodeDto rewriteEpisodeDto(EpisodeDto episode) {
+        return new EpisodeDto(
+                episode.id(),
+                episode.name(),
+                episode.episodeCode(),
+                episode.releaseDate(),
+                episode.characters().stream()
+                        .map(character -> character.replace(config.getApiBaseUrl() + "/character/",
+                                config.getLocalBaseUrl() + "/characters/"))
+                        .collect(Collectors.toList()));
+    }
+
+    public EpisodeModel saveEpisodeByDto(EpisodeDto episode) {
+        Optional<EpisodeModel> episodeOpt = episodeRepository.findById(episode.id());
+
+        if (episodeOpt.isEmpty()) {
+            EpisodeModel model = new EpisodeModel();
+            model.setId(episode.id());
+            model.setName(episode.name());
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH);
+
+            LocalDate airDate = null;
+            try {
+                airDate = LocalDate.parse(episode.releaseDate(), formatter);
+            } catch (Exception e) {
+                System.err.println("Erro ao converter data do episódio: " + episode.name() + " - " + episode.releaseDate());
+            }
+
+            model.setAirDate(airDate);
+            model.setEpisodeCode(episode.episodeCode());
+
+            return episodeRepository.save(model);
+        }
+
+        return null;
     }
 }

@@ -1,5 +1,6 @@
 package com.rickmorty.Models;
 
+import com.rickmorty.enums.Gender;
 import com.rickmorty.enums.LifeStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,6 @@ import java.util.List;
 public class CharacterModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)
@@ -28,25 +28,29 @@ public class CharacterModel {
     @Column(name = "character_status", nullable = false)
     private LifeStatus status;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 50)
     private String species;
 
     @Column(name = "character_type", nullable = false, length = 50)
     private String characterType;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private String gender;
+    private Gender gender;
 
     @ManyToOne
     @JoinColumn(name = "location_id")
     private LocationModel locationModel;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(
             name = "character_episodes",
             joinColumns = @JoinColumn(name = "character_id"),
             inverseJoinColumns = @JoinColumn(name = "episode_id")
     )
     private List<EpisodeModel> episodes;
+
+    @Column(name = "is_avatar_uploaded")
+    private boolean avatarUploaded = false;
 
 }

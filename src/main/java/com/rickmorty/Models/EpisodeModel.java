@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,7 +19,6 @@ import java.util.List;
 public class EpisodeModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)
@@ -27,10 +27,10 @@ public class EpisodeModel {
     @Column(name = "air_date", nullable = false)
     private LocalDate airDate;
 
-    @Column(name = "episode_code", nullable = false, length = 10)
+    @Column(name = "episode_code", nullable = false, length = 20)
     private String episodeCode;
 
     @ManyToMany(mappedBy = "episodes", fetch = FetchType.LAZY)
-    private List<CharacterModel> characters;
+    private List<CharacterModel> characters = new ArrayList<>();
 
 }
