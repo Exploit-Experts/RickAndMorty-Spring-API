@@ -2,12 +2,15 @@ package com.rickmorty.Services;
 
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.CharacterDto;
+import com.rickmorty.DTO.EpisodeDto;
 import com.rickmorty.Models.CharacterModel;
 import com.rickmorty.DTO.LocationDto;
+import com.rickmorty.Models.EpisodeModel;
 import com.rickmorty.Models.LocationModel;
 import com.rickmorty.Repository.EpisodeRepository;
 import com.rickmorty.Repository.LocationRepository;
 import com.rickmorty.Utils.Config;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -17,8 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.rickmorty.Repository.CharacterRepository;
 
-import java.util.Optional;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 @Service
 public class SyncApiService {
 
@@ -45,6 +49,9 @@ public class SyncApiService {
     @Autowired
     private LocationRepository locationRepository;
 
+    @Autowired
+    private EpisodeService episodeService;
+
     public SyncApiService() {
         restTemplate = new RestTemplate();
     }
@@ -54,6 +61,7 @@ public class SyncApiService {
         System.out.println("Sincronização iniciada");
         syncLocations(null);
         syncCharacters(null);
+        syncEpisode(null);
         System.out.println("Sincronização automática concluída!");
     }
 
@@ -138,7 +146,67 @@ public class SyncApiService {
             syncCharacters(charactersList.info().next());
         }
     }
+    @Transactional
+    protected void syncEpisode(String url) {
+        if (url == null) {
+            url = config.getApiBaseUrl() + "/episode";
+        }
 
+        System.out.println("Sincronização de episódios iniciada: " + url);
+
+        ResponseEntity<ApiResponseDto<EpisodeDto>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<ApiResponseDto<EpisodeDto>>() {}
+        );
+
+        ApiResponseDto<EpisodeDto> episodeList = response.getBody();
+        if (episodeList == null || episodeList.results() == null) {
+            throw new RuntimeException("Falha ao obter dados da API.");
+        }
+
+        for (EpisodeDto episode : episodeList.results()) {
+            try {
+                EpisodeModel episodeModel = this.episodeService.saveEpisodeByDto(episode);
+                if (episodeModel != null) {
+
+                    List<Long> characterIds = extractCharacterIdsFromUrls(episode.characters());
+
+                    List<CharacterModel> characters = this.characterService.findByIds(characterIds);
+                    for (CharacterModel character : characters) {
+                        if (!character.getEpisodes().contains(episodeModel)) {
+                            character.getEpisodes().add(episodeModel);
+                        }
+
+                        if (!episodeModel.getCharacters().contains(character)) {
+                            episodeModel.getCharacters().add(character);
+                        }
+                    }
+
+                    this.episodeRepository.save(episodeModel);
+                    this.characterRepository.saveAll(characters);
+                    System.out.println("Episódio: " + episodeModel.getName() + " salvo!");
+
+                }
+            } catch (Exception e) {
+                System.err.println("Erro ao salvar episódio: " + episode.name() + " - " + e.getMessage());
+            }
+        }
+
+        if (episodeList.info().next() != null) {
+            syncEpisode(episodeList.info().next());
+        }
+    }
+
+    private List<Long> extractCharacterIdsFromUrls(List<String> characterUrls) {
+        List<Long> characterIds = new ArrayList<>();
+        for (String url : characterUrls) {
+            Long characterId = extractIdFromUrl(url);
+            characterIds.add(characterId);
+        }
+        return characterIds;
+    }
     public long extractIdFromUrl(String url) {
         if (url == null || !url.matches(".*/\\d+$")) {
             throw new IllegalArgumentException("URL inválida: url=" + url);

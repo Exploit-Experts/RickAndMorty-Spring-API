@@ -7,7 +7,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EpisodeDto(
-        @JsonProperty("id") Integer id,
+        @JsonProperty("id") Long id,
         @JsonProperty("name") String name,
         @JsonProperty("episode") String episodeCode,
         @JsonAlias("air_date") String releaseDate,
