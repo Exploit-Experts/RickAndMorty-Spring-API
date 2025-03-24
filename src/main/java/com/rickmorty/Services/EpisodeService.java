@@ -1,7 +1,5 @@
 package com.rickmorty.Services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.EpisodeDto;
 import com.rickmorty.DTO.InfoDto;
@@ -16,11 +14,10 @@ import com.rickmorty.exceptions.NotFoundException;
 import com.rickmorty.interfaces.EpisodeServiceInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -34,88 +31,98 @@ import java.util.stream.Collectors;
 public class EpisodeService implements EpisodeServiceInterface {
 
     @Autowired
-    Config config;
+    private Config config;
+
     @Autowired
     private EpisodeRepository episodeRepository;
 
     @Override
     public ApiResponseDto<EpisodeDto> findAllEpisodes(Integer page, String name, String episode, SortEpisode sort) {
-
-        if (episode != null && !Pattern.matches("^S\\d{2}(E\\d{2})?$", episode.toUpperCase())) throw new InvalidParameterException("Parâmetro episode não está no formato correto. Esperado: SXXEXX");
+        if (episode != null && !Pattern.matches("^S\\d{2}(E\\d{2})?$", episode.toUpperCase())) {
+            throw new InvalidParameterException("Parâmetro episode não está no formato correto. Esperado: SXXEXX");
+        }
 
         try {
-
-            if (page != null && page <= 0) throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
-
-            StringBuilder urlBuilder = new StringBuilder(config.getApiBaseUrl() + "/episode?");
-            if (page != null) urlBuilder.append("page=").append(page).append("&");
-            if (name != null){
-                name = name.replace(" ", "+");
-                urlBuilder.append("name=").append(name).append("&");
+            if (page != null && page <= 0) {
+                throw new InvalidParameterException("Parâmetro page incorreto, deve ser um número inteiro maior ou igual a 1");
             }
-            if (episode != null) urlBuilder.append("episode=").append(episode).append("&");
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(urlBuilder.toString()))
-                    .build();
+            int pageNumber = page != null ? page - 1 : 0;
+            Pageable pageable = PageRequest.of(pageNumber, 20);
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 404) throw new NotFoundException();
+            Page<EpisodeModel> episodePage;
+            if (name != null && episode != null) {
+                episodePage = episodeRepository.findByNameContainingIgnoreCaseAndEpisodeCodeContainingIgnoreCase(name, episode, pageable);
+            } else if (name != null) {
+                episodePage = episodeRepository.findByNameContainingIgnoreCase(name, pageable);
+            } else if (episode != null) {
+                episodePage = episodeRepository.findByEpisodeCodeContainingIgnoreCase(episode, pageable);
+            } else {
+                episodePage = episodeRepository.findAll(pageable);
+            }
 
-            ObjectMapper objectMapper = new ObjectMapper();
+            if (episodePage.isEmpty()) {
+                throw new NotFoundException();
+            }
 
-            ApiResponseDto<EpisodeDto> apiResponseDto = objectMapper.readValue(response.body(),
-                    new TypeReference<ApiResponseDto<EpisodeDto>>() {
-                    });
-            return rewriteApiResponse(apiResponseDto, String.valueOf(sort));
+            List<EpisodeDto> episodeDtos = episodePage.getContent().stream()
+                    .map(this::convertToDto)
+                    .sorted((e1, e2) -> compareEpisodes(e1, e2, String.valueOf(sort)))
+                    .collect(Collectors.toList());
 
-        }catch (InvalidParameterException e){
+            InfoDto infoDto = new InfoDto(
+                    episodePage.getTotalElements(),
+                    episodePage.getTotalPages(),
+                    episodePage.hasNext() ? String.valueOf(page + 1) : null,
+                    episodePage.hasPrevious() ? String.valueOf(page - 1) : null
+            );
+
+            return new ApiResponseDto<>(infoDto, episodeDtos);
+
+        } catch (InvalidParameterException e) {
             throw new InvalidParameterException(e.getMessage());
-        } catch (NotFoundException e){
+        } catch (NotFoundException e) {
             throw new NotFoundException();
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("Erro ao buscar episódios: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao buscar episódios", e);
         }
-        return null;
     }
 
     @Override
     public EpisodeDto findEpisodeById(Long id) {
         try {
-            if (id == null || id < 1) throw new InvalidIdException();
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(config.getApiBaseUrl() + "/episode/" + id))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 404) throw new EpisodeNotFoundException();
-            ObjectMapper objectMapper = new ObjectMapper();
+            if (id == null || id < 1) {
+                throw new InvalidIdException();
+            }
 
-            EpisodeDto episode = objectMapper.readValue(response.body(), EpisodeDto.class);
-            return rewriteEpisodeDto(episode);
+            Optional<EpisodeModel> episodeOptional = episodeRepository.findById(id);
+            if (episodeOptional.isEmpty()) {
+                throw new EpisodeNotFoundException();
+            }
+
+            return convertToDto(episodeOptional.get());
 
         } catch (InvalidIdException e) {
-            throw new InvalidIdException();
-        } catch (NumberFormatException e) {
             throw new InvalidIdException();
         } catch (EpisodeNotFoundException e) {
             throw new EpisodeNotFoundException();
         } catch (Exception e) {
             log.error("Erro ao buscar episódio por ID: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao buscar episódio por ID", e);
         }
-        return null;
     }
 
-    private ApiResponseDto<EpisodeDto> rewriteApiResponse(ApiResponseDto<EpisodeDto> apiResponseDto, String sort) {
-        InfoDto updatedInfo = rewriteInfoDto(apiResponseDto.info());
-
-        List<EpisodeDto> updatedResults = apiResponseDto.results().stream()
-                .map(this::rewriteEpisodeDto)
-                .sorted((e1, e2) -> compareEpisodes(e1, e2, sort))
-                .collect(Collectors.toList());
-
-        return new ApiResponseDto<>(updatedInfo, updatedResults);
+    private EpisodeDto convertToDto(EpisodeModel episode) {
+        return new EpisodeDto(
+                episode.getId(),
+                episode.getName(),
+                episode.getEpisodeCode(),
+                episode.getAirDate().toString(),
+                episode.getCharacters().stream()
+                        .map(character -> config.getLocalBaseUrl() + "/characters/" + character.getId())
+                        .collect(Collectors.toList())
+        );
     }
 
     private int compareEpisodes(EpisodeDto e1, EpisodeDto e2, String sort) {
@@ -190,5 +197,6 @@ public class EpisodeService implements EpisodeServiceInterface {
             return episodeRepository.save(model);
         }
 
-        return null;    }
+        return null;
+    }
 }
