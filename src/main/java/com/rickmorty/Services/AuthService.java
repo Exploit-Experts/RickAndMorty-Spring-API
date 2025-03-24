@@ -4,6 +4,7 @@ import com.rickmorty.DTO.AuthenticationDto;
 import com.rickmorty.DTO.UserDto;
 import com.rickmorty.Models.UserModel;
 import com.rickmorty.exceptions.InvalidCredentialsException;
+import com.rickmorty.exceptions.InvalidResetCodeException;
 import com.rickmorty.exceptions.UserInactiveException;
 import com.rickmorty.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
@@ -111,7 +112,7 @@ public class AuthService {
         }
 
         if (user.getResetPasswordCode() == null || !user.getResetPasswordCode().equals(code)) {
-            throw new IllegalArgumentException("Código de redefinição inválido");
+            throw new InvalidResetCodeException("Código de redefinição inválido");
         }
 
         if (user.getResetPasswordExpiration() == null ||

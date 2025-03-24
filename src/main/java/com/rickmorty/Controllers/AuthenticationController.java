@@ -2,6 +2,7 @@ package com.rickmorty.Controllers;
 
 import com.rickmorty.DTO.AuthenticationDto;
 import com.rickmorty.DTO.UserDto;
+import com.rickmorty.DTO.UserEmailDto;
 import com.rickmorty.DTO.ResetPasswordDto;
 import com.rickmorty.Services.AuthService;
 import com.rickmorty.Services.EmailService;
@@ -75,8 +76,8 @@ public class AuthenticationController {
                         }))
         })
         @PostMapping("/forgot-password")
-        public ResponseEntity<Void> forgotPassword(@RequestBody String email) {
-                authService.forgotPassword(email);
+        public ResponseEntity<Void> forgotPassword(@RequestBody @Valid UserEmailDto userEmailDto) {
+                authService.forgotPassword(userEmailDto.email());
                 return ResponseEntity.ok().build();
         }
 
