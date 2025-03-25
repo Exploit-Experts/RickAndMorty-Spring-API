@@ -103,6 +103,10 @@ public class AuthService {
             throw new IllegalArgumentException("As senhas não conferem");
         }
 
+        if (email == null || !email.matches("^[^@]+@[^@]+$")) {
+            throw new InvalidCredentialsException("Formato de e-mail inválido");
+        }
+
         Optional<UserModel> userOpt = userService.findByEmail(email);
         if (userOpt.isEmpty()) {
             throw new UserNotFoundException();
