@@ -78,6 +78,9 @@ public class AuthService {
     }
 
     public void forgotPassword(String email) {
+        if (email == null || !email.matches("^[^@]+@[^@]+$")) {
+            throw new InvalidCredentialsException("Formato de e-mail inválido");
+        }
         Optional<UserModel> userOpt = userService.findByEmail(email);
         if (userOpt.isPresent()) {
             UserModel user = userOpt.get();
