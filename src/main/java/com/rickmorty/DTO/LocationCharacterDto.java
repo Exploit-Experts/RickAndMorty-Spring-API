@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record LocationCharacterDto(
-        @JsonProperty("name") int name,
+        @JsonProperty("name") String name,
         @JsonProperty("url") String url
 
 ) {}

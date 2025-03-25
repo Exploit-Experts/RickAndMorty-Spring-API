@@ -54,21 +54,25 @@ public class CharacterService implements CharacterServiceInterface {
             throw new InvalidParameterException("Parâmetro page incorreto, deve ser um número inteiro maior ou igual a 1");
         }
 
-        Pageable pageable = PageRequest.of(
-                (page == null ? 0 : page - 1),
-                10,
-                Sort.by(sort == SortOrder.ASC ? Sort.Direction.ASC : Sort.Direction.DESC, "name")
+        Map<SortOrder, Sort> sortOptions = Map.of(
+                SortOrder.NAME_ASC, Sort.by(Sort.Direction.ASC, "name"),
+                SortOrder.NAME_DESC, Sort.by(Sort.Direction.DESC, "name"),
+                SortOrder.STATUS_ASC, Sort.by(Sort.Direction.ASC, "status"),
+                SortOrder.STATUS_DESC, Sort.by(Sort.Direction.DESC, "status")
         );
+
+        Sort sortConfig = sortOptions.getOrDefault(sort, Sort.by(Sort.Direction.ASC, "name"));
+
+        Pageable pageable = PageRequest.of((page == null ? 0 : page - 1), 10, sortConfig);
 
         Page<CharacterModel> characters = characterRepository.findAllWithFilters(name, status, String.valueOf(species), type, gender, pageable);
         List<CharacterDto> characterDtos = characters.map(this::rewriteCharacterDto).getContent();
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("characters", characterDtos);
-        response.put("totalPages", characters.getTotalPages());
-        response.put("totalElements", characters.getTotalElements());
-
-        return response;
+        return Map.of(
+                "characters", characterDtos,
+                "totalPages", characters.getTotalPages(),
+                "totalElements", characters.getTotalElements()
+        );
     }
 
     @Override
@@ -102,7 +106,7 @@ public class CharacterService implements CharacterServiceInterface {
             return null;
         }
         return new LocationCharacterDto(
-                location.getId().intValue(),
+                location.getId().toString(),
                 location.getName()
         );
     }
