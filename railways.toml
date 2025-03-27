@@ -1,9 +1,0 @@
-[[schedules]]
-name = "shutdown"
-cron = "0 0 * * *"
-command = "railway down --project $RAILWAY_PROJECT_ID"
-
-[[schedules]]
-name = "startup"
-cron = "30 8 * * *"
-command = "railway up --project $RAILWAY_PROJECT_ID"
