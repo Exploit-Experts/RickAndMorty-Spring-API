@@ -80,7 +80,7 @@ mvn clean install
 
 4. Execute the jar
 ```
-java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
+java -jar target/rickMorty-2.0.0-SNAPSHOT.jar
 ```
 
 </br>
@@ -88,9 +88,9 @@ java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
 ## Endpoints
 
 - **Characters**
-    - `GET /api/v1/characters` - Retrieves all characters from the first page.
-    - `GET /api/v1/characters?page=1` - Retrieves all characters from a specific page.
-    - `GET /api/v1/characters`
+    - `GET /api/v2/characters` - Retrieves all characters from the first page.
+    - `GET /api/v2/characters?page=1` - Retrieves all characters from a specific page.
+    - `GET /api/v2/characters`
       - Parameters:
         - `sort` (optional) - Sorts by a specific attribute (`NAME_ASC`, `NAME_DESC`, `STATUS_ASC`, `STATUS_DESC`).
         - `name` (optional) - Filters characters by name.
@@ -98,23 +98,23 @@ java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
         - `species` (optional) - Filters characters by species.
         - `type` (optional) - Filters characters by type.
         - `gender` (optional) - Filters characters by gender (`FEMALE`, `MALE`, `GENDERLESS`, `UNKNOWN`).
-    - `GET /api/v1/characters/{id}` - Retrieves a specific character by ID.
-    - `GET /api/v1/characters/avatar/{id}.jpeg` - Retrieves the avatar of a specific character by ID.
+    - `GET /api/v2/characters/{id}` - Retrieves a specific character by ID.
+    - `GET /api/v2/characters/avatar/{id}.jpeg` - Retrieves the avatar of a specific character by ID.
 
 - **Episodes**
-    - `GET /api/v1/episodes` - Retrieves all episodes from the first page.
-    - `GET /api/v1/episodes?page=2` - Retrieves all episodes from a specific page.
-    - `GET /api/v1/episodes`
+    - `GET /api/v2/episodes` - Retrieves all episodes from the first page.
+    - `GET /api/v2/episodes?page=2` - Retrieves all episodes from a specific page.
+    - `GET /api/v2/episodes`
       - Parameters:
         - `name` (optional) - Filters episodes by name.
         - `episode` (optional) - Filters episodes by code (expected format: `SXXEXX`).
         - `sort` (optional) - Sorts episodes by name (`NAME_ASC`, `NAME_DESC`) or episode code (`EPISODE_CODE`, `EPISODE_CODE_DESC`).
-    - `GET /api/v1/episodes/{id}` - Retrieves a specific episode by ID.
+    - `GET /api/v2/episodes/{id}` - Retrieves a specific episode by ID.
 
 - **Locations**
-    - `GET /api/v1/locations` - Retrieves all locations from the first page.
-    - `GET /api/v1/locations?page=2` - Retrieves all locations from a specific page.
-    - `GET /api/v1/locations`
+    - `GET /api/v2/locations` - Retrieves all locations from the first page.
+    - `GET /api/v2/locations?page=2` - Retrieves all locations from a specific page.
+    - `GET /api/v2/locations`
       - Parameters:
         - `name` (optional) - Filters locations by name.
         - `type` (optional) - Filters locations by type.
@@ -123,14 +123,14 @@ java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
     - `GET /api/v1/locations/{id}` - Retrieves a specific location by ID.
 
 - **Authentication & Users**
-    - `POST /api/v1/auth/register` - Registers a new user.
-    - `POST /api/v1/auth/login` - Authenticates user and returns JWT token.
-    - `PUT /api/v1/users/{id}` - Fully updates user data (requires authentication).
-    - `PATCH /api/v1/users/{id}` - Partially updates user data (requires authentication).
-    - `DELETE /api/v1/users/{id}` - Soft deletes the user (requires authentication).
+    - `POST /api/v2/auth/register` - Registers a new user.
+    - `POST /api/v2/auth/login` - Authenticates user and returns JWT token.
+    - `PUT /api/v2/users/{id}` - Fully updates user data (requires authentication).
+    - `PATCH /api/v2/users/{id}` - Partially updates user data (requires authentication).
+    - `DELETE /api/v2/users/{id}` - Soft deletes the user (requires authentication).
 
 - **Favorites** (All require authentication with Bearer token)
-    - `POST /api/v1/favorites` - Registers a favorite and associates it with a user.
+    - `POST /api/v2/favorites` - Registers a favorite and associates it with a user.
       - Request body:
         ```json
         {
@@ -139,12 +139,12 @@ java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
           "userId": 1
         }
         ```
-    - `GET /api/v1/favorites/{userId}` - Retrieves all favorites for a specific user.
+    - `GET /api/v2/favorites/{userId}` - Retrieves all favorites for a specific user.
       - Parameters:
         - `page` (optional, default: 0) - The page number to retrieve.
         - `sort` (optional, default: "ASC") - Sorts by ID in ascending or descending order.
-    - `DELETE /api/v1/favorites/{userId}/{favoriteId}` - Removes a specific favorite for a user.
-    - `DELETE /api/v1/favorites/{userId}` - Removes all favorites for a user.
+    - `DELETE /api/v2/favorites/{userId}/{favoriteId}` - Removes a specific favorite for a user.
+    - `DELETE /api/v2/favorites/{userId}` - Removes all favorites for a user.
 
 ### API Status Responses
 

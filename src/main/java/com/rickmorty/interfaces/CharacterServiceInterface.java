@@ -1,7 +1,7 @@
 package com.rickmorty.interfaces;
 
-import com.rickmorty.DTO.ApiResponseDto;
-import com.rickmorty.DTO.CharacterDto;
+import com.rickmorty.dtos.ApiResponseDto;
+import com.rickmorty.dtos.CharacterDto;
 import com.rickmorty.enums.Gender;
 import com.rickmorty.enums.LifeStatus;
 import com.rickmorty.enums.SortOrder;

@@ -1,7 +1,7 @@
 package com.rickmorty.interfaces;
 
-import com.rickmorty.DTO.ApiResponseDto;
-import com.rickmorty.DTO.EpisodeDto;
+import com.rickmorty.dtos.ApiResponseDto;
+import com.rickmorty.dtos.EpisodeDto;
 import com.rickmorty.enums.SortEpisode;
 
 public interface EpisodeServiceInterface {

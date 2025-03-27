@@ -1,7 +1,7 @@
 package com.rickmorty.interfaces;
 
-import com.rickmorty.DTO.UserDto;
-import com.rickmorty.DTO.UserPatchDto;
+import com.rickmorty.dtos.UserDto;
+import com.rickmorty.dtos.UserPatchDto;
 import org.springframework.validation.BindingResult;
 
 public interface UserServiceInterface {

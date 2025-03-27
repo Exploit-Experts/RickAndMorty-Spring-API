@@ -1,8 +1,8 @@
 package com.rickmorty.infra.security;
 
 
-import com.rickmorty.Services.TokenService;
-import com.rickmorty.Services.UserService;
+import com.rickmorty.services.TokenService;
+import com.rickmorty.services.UserService;
 import com.rickmorty.exceptions.UserNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

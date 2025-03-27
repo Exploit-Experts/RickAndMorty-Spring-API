@@ -1,7 +1,7 @@
 package com.rickmorty.handlers;
 
-import com.rickmorty.Models.CustomErrorResponse;
-import com.rickmorty.Models.ValidationErrorResponse;
+import com.rickmorty.models.CustomErrorResponse;
+import com.rickmorty.models.ValidationErrorResponse;
 import com.rickmorty.exceptions.*;
 import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;

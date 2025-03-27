@@ -1,7 +1,7 @@
 package com.rickmorty.interfaces;
 
-import com.rickmorty.DTO.ApiResponseDto;
-import com.rickmorty.DTO.LocationDto;
+import com.rickmorty.dtos.ApiResponseDto;
+import com.rickmorty.dtos.LocationDto;
 import com.rickmorty.enums.SortLocation;
 
 public interface LocationServiceInterface {
