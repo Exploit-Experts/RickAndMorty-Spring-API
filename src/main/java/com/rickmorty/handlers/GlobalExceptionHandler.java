@@ -3,9 +3,12 @@ package com.rickmorty.handlers;
 import com.rickmorty.Models.CustomErrorResponse;
 import com.rickmorty.Models.ValidationErrorResponse;
 import com.rickmorty.exceptions.*;
-import com.rickmorty.exceptions.ConflictException;
-
 import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,6 +18,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.BindException;
 
 @Slf4j
 @ControllerAdvice
@@ -24,10 +29,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CustomErrorResponse> handlerUserNotFound(UserNotFoundException ex) {
         return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.NOT_FOUND);
     }
+    
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<CustomErrorResponse> invalidCredentialsException(InvalidCredentialsException ex){
         return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.UNAUTHORIZED);
     }
+    
     @ExceptionHandler(UserInactiveException.class)
     public ResponseEntity<CustomErrorResponse> userInactiveException(UserInactiveException ex) {
         return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.FORBIDDEN);
@@ -117,6 +124,39 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FavoriteNotFound.class)
     public ResponseEntity<CustomErrorResponse> handleFavoriteNotFound(FavoriteNotFound ex) {
         return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(InvalidResetCodeException.class)
+    public ResponseEntity<Object> handleInvalidResetCodeException(InvalidResetCodeException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+    
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<Object> handleBindException(BindException ex) {
+        List<String> errors = ex.getBindingResult().getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.toList());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("errors", errors);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
