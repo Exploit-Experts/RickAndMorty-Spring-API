@@ -8,6 +8,7 @@ import com.rickmorty.enums.SortFavorite;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -98,9 +99,10 @@ public class FavoriteController {
             @PathVariable Long userId,
             @RequestParam FavoriteTypes favoriteType,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "ASC") SortFavorite sort
+            @RequestParam SortFavorite sort,
+            @RequestParam(defaultValue = "ASC") Sort.Direction direction
     ) {
-        Page<?> favorites = favoriteService.getAllFavorites(token, userId, favoriteType, page, sort);
+        Page<?> favorites = favoriteService.getAllFavorites(token, userId, favoriteType, page, sort, direction);
         return ResponseEntity.ok(favorites);
     }
 

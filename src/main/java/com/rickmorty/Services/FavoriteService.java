@@ -56,18 +56,14 @@ public class FavoriteService implements FavoriteServiceInterface {
 
     @Override
     public void create(String token, FavoriteDto favoriteDto, BindingResult result) {
-        try {
-            Long favoriteId = favoriteDto.favoriteId();
-            UserModel user = userRepository.findByIdAndActive(tokenService.extractUserId(token), 1)
-                    .orElseThrow(UserNotFoundException::new);
+        Long favoriteId = favoriteDto.favoriteId();
+        UserModel user = userRepository.findByIdAndActive(tokenService.extractUserId(token), 1)
+                .orElseThrow(UserNotFoundException::new);
 
-            switch (favoriteDto.favoriteType()) {
-                case FavoriteTypes.CHARACTER -> saveCharacterFavorite(favoriteId, user);
-                case FavoriteTypes.EPISODE -> saveEpisodeFavorite(favoriteId, user);
-                case FavoriteTypes.LOCATION -> saveLocationFavorite(favoriteId, user);
-            }
-        } catch (Exception e){
-            throw new RuntimeException(e.getMessage());
+        switch (favoriteDto.favoriteType()) {
+            case FavoriteTypes.CHARACTER -> saveCharacterFavorite(favoriteId, user);
+            case FavoriteTypes.EPISODE -> saveEpisodeFavorite(favoriteId, user);
+            case FavoriteTypes.LOCATION -> saveLocationFavorite(favoriteId, user);
         }
     }
 
@@ -77,32 +73,25 @@ public class FavoriteService implements FavoriteServiceInterface {
             Long userId,
             FavoriteTypes favoriteType,
             int page,
-            SortFavorite sort
+            SortFavorite sort,
+            Sort.Direction sortDirection
     ) {
-        try {
-            Sort.Direction direction;
-            direction = Sort.Direction.fromString(sort.toString().toUpperCase());
-            Sort sortOrder = Sort.by(direction, "id");
-            Pageable pageable = PageRequest.of(page, 10, sortOrder);
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(sortDirection, String.valueOf(sort)));
+        Long resolvedUserId = resolveUserId(token, userId);
 
-            Long resolvedUserId = resolveUserId(token, userId);
-
-            switch (favoriteType){
-                case CHARACTER -> {
-                    return getAllCharactersFavorites(resolvedUserId, pageable);
-                }
-                case EPISODE -> {
-                    return getAllEpisodesFavorites(resolvedUserId, pageable);
-                }
-                case LOCATION -> {
-                    return getAllLocationsFavorites(resolvedUserId, pageable);
-                }
-                default -> {
-                    throw new InvalidParameterException("Invalid favorite type");
-                }
+        switch (favoriteType){
+            case CHARACTER -> {
+                return getAllCharactersFavorites(resolvedUserId, pageable);
             }
-        } catch (IllegalArgumentException e) {
-            throw new InvalidParameterException("Direção de sort inválida: " + sort);
+            case EPISODE -> {
+                return getAllEpisodesFavorites(resolvedUserId, pageable);
+            }
+            case LOCATION -> {
+                return getAllLocationsFavorites(resolvedUserId, pageable);
+            }
+            default -> {
+                throw new InvalidParameterException("Invalid favorite type");
+            }
         }
     }
 
@@ -111,7 +100,7 @@ public class FavoriteService implements FavoriteServiceInterface {
         Long resolvedUserId = resolveUserId(token, userId);
 
         Long existsFavorite = favoriteRepository.existsByUserIdAndFavoriteId(resolvedUserId, favoriteId);
-        if (existsFavorite == 0) throw new FavoriteNotFound("Favorito não cadastrado");
+        if (existsFavorite == 0) throw new FavoriteNotFound();
 
         favoriteRepository.deleteByUserIdAndFavoriteId(resolvedUserId, favoriteId);
     }
@@ -121,7 +110,7 @@ public class FavoriteService implements FavoriteServiceInterface {
         Long resolvedUserId = resolveUserId(token, userId);
 
         Long existsFavorite = favoriteRepository.existsByUserId(resolvedUserId);
-        if (existsFavorite == 0) throw new FavoriteNotFound("O usuário não tem favoritos cadastrados");
+        if (existsFavorite == 0) throw new FavoriteNotFound();
 
         favoriteRepository.deleteAllByUserId(resolvedUserId);
     }
@@ -167,7 +156,7 @@ public class FavoriteService implements FavoriteServiceInterface {
 
     private Page<CharacterResponseDto> getAllCharactersFavorites(Long userId, Pageable pageable) {
         Page<FavoriteCharacterModel> favoritesPage = favoriteCharacterRepository.findByUserId(userId, pageable);
-        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui favoritos cadastrados");
+        if (favoritesPage.isEmpty()) throw new FavoriteNotFound();
 
         return favoritesPage.map(favorite -> {
             CharacterModel character = favorite.getCharacter();
@@ -185,7 +174,7 @@ public class FavoriteService implements FavoriteServiceInterface {
 
     private Page<LocationResponseDto> getAllLocationsFavorites(Long userId, Pageable pageable) {
         Page<FavoriteLocationModel> favoritesPage = favoriteLocationRepository.findByUserId(userId, pageable);
-        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui localizações nos favoritos");
+        if (favoritesPage.isEmpty()) throw new FavoriteNotFound();
 
         return favoritesPage.map(favorite -> {
             LocationModel location = favorite.getLocation();
@@ -201,7 +190,7 @@ public class FavoriteService implements FavoriteServiceInterface {
 
     private Page<EpisodeResponseDto> getAllEpisodesFavorites(Long userId, Pageable pageable) {
         Page<FavoriteEpisodeModel> favoritesPage = favoriteEpisodeRepository.findByUserId(userId, pageable);
-        if (favoritesPage.isEmpty()) throw new FavoriteNotFound("O usuário não possui localizações nos favoritos");
+        if (favoritesPage.isEmpty()) throw new FavoriteNotFound();
 
         return favoritesPage.map(favorite -> {
             EpisodeModel episode = favorite.getEpisode();
