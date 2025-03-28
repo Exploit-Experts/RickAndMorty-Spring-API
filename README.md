@@ -11,6 +11,12 @@
 RickAndMorty-Spring-API is a backend developed with Java and Spring Boot that implements a RESTful API to list data of characters from the Rick and Morty series. The project allows viewing character information and is prepared to be consumed by a separate front-end. 
 
 This service provides a robust base for integration with client interfaces that consume character data through endpoints.
+For more information, you can explore the following resources:
+
+- 📚 **Documentation**: Detailed project documentation is available in the [Docs-RickAndMorty repository](https://github.com/Exploit-Experts/Docs-RickAndMorty).
+- 🌐 **Front-end**: Check out the [Angular front-end implementation](https://github.com/Exploit-Experts/RickAndMorthy-client) that consumes this API.
+
+These resources provide additional insights and tools to help you better understand and utilize the Rick and Morty Spring API.
 
 </br>
 
@@ -47,7 +53,7 @@ Create a RESTful API that allows consuming and viewing data of characters from t
 ## Technologies Used
 
 - ![Java](https://img.shields.io/badge/Java-21-blue)
-- ![MySQL](https://img.shields.io/badge/database-MySQL-blue)
+- ![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL-blue)
 - ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-green)
 - ![Spring Boot](https://img.shields.io/badge/Maven-3.9.9-green)
 - ![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-3.3.4-green)
@@ -82,9 +88,9 @@ java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
 ## Endpoints
 
 - **Characters**
-    - `GET /characters` - Retrieves all characters from the first page.
-    - `GET /characters?page=1` - Retrieves all characters from a specific page.
-    - `GET /characters`
+    - `GET /api/v1/characters` - Retrieves all characters from the first page.
+    - `GET /api/v1/characters?page=1` - Retrieves all characters from a specific page.
+    - `GET /api/v1/characters`
       - Parameters:
         - `sort` (optional) - Sorts by a specific attribute (`NAME_ASC`, `NAME_DESC`, `STATUS_ASC`, `STATUS_DESC`).
         - `name` (optional) - Filters characters by name.
@@ -92,45 +98,64 @@ java -jar target/rickMorty-0.0.1-SNAPSHOT.jar
         - `species` (optional) - Filters characters by species.
         - `type` (optional) - Filters characters by type.
         - `gender` (optional) - Filters characters by gender (`FEMALE`, `MALE`, `GENDERLESS`, `UNKNOWN`).
-    - `GET /characters/{id}` - Retrieves a specific character by ID.
-    - `GET /characters/avatar/{id}.jpeg` - Retrieves the avatar of a specific character by ID.
+    - `GET /api/v1/characters/{id}` - Retrieves a specific character by ID.
+    - `GET /api/v1/characters/avatar/{id}.jpeg` - Retrieves the avatar of a specific character by ID.
 
 - **Episodes**
-    - `GET /episodes` - Retrieves all episodes from the first page.
-    - `GET /episodes?page=2` - Retrieves all episodes from a specific page.
-    - `GET /episodes`
+    - `GET /api/v1/episodes` - Retrieves all episodes from the first page.
+    - `GET /api/v1/episodes?page=2` - Retrieves all episodes from a specific page.
+    - `GET /api/v1/episodes`
       - Parameters:
         - `name` (optional) - Filters episodes by name.
         - `episode` (optional) - Filters episodes by code (expected format: `SXXEXX`).
         - `sort` (optional) - Sorts episodes by name (`NAME_ASC`, `NAME_DESC`) or episode code (`EPISODE_CODE`, `EPISODE_CODE_DESC`).
-    - `GET /episodes/{id}` - Retrieves a specific episode by ID.
+    - `GET /api/v1/episodes/{id}` - Retrieves a specific episode by ID.
 
 - **Locations**
-    - `GET /locations` - Retrieves all locations from the first page.
-    - `GET /locations?page=2` - Retrieves all locations from a specific page.
-    - `GET /locations`
+    - `GET /api/v1/locations` - Retrieves all locations from the first page.
+    - `GET /api/v1/locations?page=2` - Retrieves all locations from a specific page.
+    - `GET /api/v1/locations`
       - Parameters:
         - `name` (optional) - Filters locations by name.
         - `type` (optional) - Filters locations by type.
         - `dimension` (optional) - Filters locations by dimension.
         - `sort` (optional) - Sorts locations by name (`NAME_ASC`, `NAME_DESC`), type (`TYPE_ASC`, `TYPE_DESC`), or dimension (`DIMENSION_ASC`, `DIMENSION_DESC`).
-    - `GET /locations/{id}` - Retrieves a specific location by ID.
+    - `GET /api/v1/locations/{id}` - Retrieves a specific location by ID.
 
-- **Users**
-    - `POST /users` - Registers a user by ID.
-    - `PUT /users/{id}` - Fully updates user data.
-    - `PATCH /users/{id}` - Partially updates user data by ID.
-    - `DELETE /users/{id}` - _(soft delete)_ Deletes the user by ID.
+- **Authentication & Users**
+    - `POST /api/v1/auth/register` - Registers a new user.
+    - `POST /api/v1/auth/login` - Authenticates user and returns JWT token.
+    - `PUT /api/v1/users/{id}` - Fully updates user data (requires authentication).
+    - `PATCH /api/v1/users/{id}` - Partially updates user data (requires authentication).
+    - `DELETE /api/v1/users/{id}` - Soft deletes the user (requires authentication).
 
-- **Favorites**
-    - `POST /favorites` - Registers a favorite and associates it with a user.
-    - `GET /favorites/{userId}` - Retrieves all favorites for a specific user.
+- **Favorites** (All require authentication with Bearer token)
+    - `POST /api/v1/favorites` - Registers a favorite and associates it with a user.
+      - Request body:
+        ```json
+        {
+          "apiId": 1,
+          "itemType": "CHARACTER|EPISODE|LOCATION",
+          "userId": 1
+        }
+        ```
+    - `GET /api/v1/favorites/{userId}` - Retrieves all favorites for a specific user.
       - Parameters:
         - `page` (optional, default: 0) - The page number to retrieve.
-        - `size` (optional, default: 10) - The number of items per page.
-        - `sort` (optional, default: "asc") - Sorts by ID in ascending or descending order.
-    - `DELETE /favorites/{userId}/{favoriteId}` - Removes a specific favorite for a user.
-    - `DELETE /favorites/{userId}` - Removes all favorites for a user.
+        - `sort` (optional, default: "ASC") - Sorts by ID in ascending or descending order.
+    - `DELETE /api/v1/favorites/{userId}/{favoriteId}` - Removes a specific favorite for a user.
+    - `DELETE /api/v1/favorites/{userId}` - Removes all favorites for a user.
+
+### API Status Responses
+
+Common response codes:
+- `200 OK` - Request succeeded
+- `201 Created` - Resource successfully created
+- `204 No Content` - Request succeeded with no content to return (used for DELETE)
+- `400 Bad Request` - Invalid parameters or request body
+- `401 Unauthorized` - Authentication required
+- `404 Not Found` - Resource not found
+- `409 Conflict` - Resource already exists (for favorites)
 
 ### Swagger Documentation
 
