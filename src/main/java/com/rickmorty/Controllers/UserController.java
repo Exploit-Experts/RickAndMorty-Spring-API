@@ -2,7 +2,10 @@ package com.rickmorty.Controllers;
 
 import com.rickmorty.DTO.UserDto;
 import com.rickmorty.DTO.UserPatchDto;
+import com.rickmorty.Services.FavoriteService;
 import com.rickmorty.Services.UserService;
+import com.rickmorty.enums.FavoriteTypes;
+import com.rickmorty.enums.SortFavorite;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,8 +13,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +26,13 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "BearerAuth")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final FavoriteService favoriteService;
+
+    public UserController(UserService userService, FavoriteService favoriteService) {
+        this.userService = userService;
+        this.favoriteService = favoriteService;
+    }
 
     @Operation(summary = "Create a new user",
             description = "Create a new user with the provided details",
@@ -134,6 +145,75 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @Operation(summary = "Get all favorites for a user",
+        description = "Retrieve all favorites for a specific user",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Favorites found"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
+            @ApiResponse(responseCode = "401", description = "User not authenticate",
+                content = @Content(mediaType = "application/json",
+                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
+            @ApiResponse(
+                responseCode = "404",
+                description = "NOT FOUND",
+                content = @Content(mediaType = "application/json",
+                    examples = {
+                        @ExampleObject(name = "User not found", value = "{\"message\": \"Usuário não encontrado\"}"),
+                        @ExampleObject(name = "User hasn't favorites", value = "{\"message\": \"O usuário não tem favoritos cadastrados\"}")
+                    })),
+        })
+    @GetMapping("/favorites/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Page<?>> getAllUserFavorites(
+        @RequestHeader("Authorization") String token,
+        @PathVariable Long userId,
+        @RequestParam FavoriteTypes favoriteType,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam SortFavorite sort,
+        @RequestParam(defaultValue = "ASC") Sort.Direction direction
+    ) {
+        Page<?> favorites = favoriteService.getAllFavoritesByUserId(token, userId, favoriteType, page, sort, direction);
+        return ResponseEntity.ok(favorites);
+    }
+
+    @GetMapping("favorites/{userId}/{favoriteId}")
+    public ResponseEntity<?> getFavoriteById(
+        @PathVariable Long userId,
+        @PathVariable Long favoriteId
+    ) {
+        Object favorite = favoriteService.getFavoriteById(userId, favoriteId);
+        return ResponseEntity.ok(favorite);
+    }
+
+    @Operation(summary = "Remove all favorites for a user",
+        description = "Remove all favorites for a user by user ID",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "All favorites removed"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
+            @ApiResponse(responseCode = "401", description = "User not authenticate",
+                content = @Content(mediaType = "application/json",
+                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                content = @Content(mediaType = "application/json",
+                    examples = {
+                        @ExampleObject(name = "User not found", value = "{\"message\": \"Usuário não encontrado\"}"),
+                        @ExampleObject(name = "User hasn't favorites", value = "{\"message\": \"O usuário não tem favoritos cadastrados\"}")
+                    })),
+        })
+    @DeleteMapping("/favorites/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<String> removeFavoritesByUserId(
+        @RequestHeader("Authorization") String token,
+        @PathVariable Long userId
+    ) {
+        favoriteService.removeAllFavoritesByUserId(token, userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

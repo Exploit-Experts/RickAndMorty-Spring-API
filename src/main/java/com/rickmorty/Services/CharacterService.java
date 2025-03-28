@@ -6,6 +6,7 @@ import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.CharacterDto;
 import com.rickmorty.DTO.InfoDto;
 import com.rickmorty.DTO.LocationCharacterDto;
+import com.rickmorty.DTO.responses.CharacterResponseDto;
 import com.rickmorty.Models.CharacterModel;
 import com.rickmorty.Repository.CharacterRepository;
 import com.rickmorty.Utils.Config;
@@ -170,12 +171,12 @@ public class CharacterService implements CharacterServiceInterface {
                 .map(next -> next.replace(config.getApiBaseUrl() + "/character",
                         config.getLocalBaseUrl() + "/characters"))
                 .orElse(null);
-    
+
         String prevUrl = Optional.ofNullable(originalInfo.prev())
                 .map(prev -> prev.replace(config.getApiBaseUrl() + "/character",
                         config.getLocalBaseUrl() + "/characters"))
                 .orElse(null);
-    
+
         return new InfoDto(
                 originalInfo.count(),
                 originalInfo.pages(),
@@ -256,5 +257,17 @@ public class CharacterService implements CharacterServiceInterface {
             }
         }
         return listCharacter;
+    }
+
+    public CharacterResponseDto convertCharacterToDto(CharacterModel character) {
+        return new CharacterResponseDto(
+            character.getId(),
+            character.getName(),
+            character.getStatus(),
+            character.getSpecies(),
+            character.getCharacterType(),
+            character.getGender(),
+            character.getLocationModel()
+        );
     }
 }

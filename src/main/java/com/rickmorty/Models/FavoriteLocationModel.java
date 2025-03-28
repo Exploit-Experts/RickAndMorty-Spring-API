@@ -8,17 +8,9 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "favorites_locations")
-public class FavoriteLocationModel {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserModel user;
-
+@DiscriminatorValue("LOCATION")
+@Table(name = "favorite_locations")
+public class FavoriteLocationModel extends FavoriteModel {
     @ManyToOne
     @JoinColumn(name = "location_id", nullable = false)
     private LocationModel location;

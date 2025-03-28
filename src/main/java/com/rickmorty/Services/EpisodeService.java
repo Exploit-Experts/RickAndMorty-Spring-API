@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.EpisodeDto;
 import com.rickmorty.DTO.InfoDto;
+import com.rickmorty.DTO.responses.EpisodeResponseDto;
 import com.rickmorty.Models.EpisodeModel;
 import com.rickmorty.Repository.EpisodeRepository;
 import com.rickmorty.Utils.Config;
@@ -17,6 +18,7 @@ import com.rickmorty.interfaces.EpisodeServiceInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -41,15 +43,17 @@ public class EpisodeService implements EpisodeServiceInterface {
     @Override
     public ApiResponseDto<EpisodeDto> findAllEpisodes(Integer page, String name, String episode, SortEpisode sort) {
 
-        if (episode != null && !Pattern.matches("^S\\d{2}(E\\d{2})?$", episode.toUpperCase())) throw new InvalidParameterException("Parâmetro episode não está no formato correto. Esperado: SXXEXX");
+        if (episode != null && !Pattern.matches("^S\\d{2}(E\\d{2})?$", episode.toUpperCase()))
+            throw new InvalidParameterException("Parâmetro episode não está no formato correto. Esperado: SXXEXX");
 
         try {
 
-            if (page != null && page <= 0) throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
+            if (page != null && page <= 0)
+                throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
 
             StringBuilder urlBuilder = new StringBuilder(config.getApiBaseUrl() + "/episode?");
             if (page != null) urlBuilder.append("page=").append(page).append("&");
-            if (name != null){
+            if (name != null) {
                 name = name.replace(" ", "+");
                 urlBuilder.append("name=").append(name).append("&");
             }
@@ -57,8 +61,8 @@ public class EpisodeService implements EpisodeServiceInterface {
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(urlBuilder.toString()))
-                    .build();
+                .uri(URI.create(urlBuilder.toString()))
+                .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 404) throw new NotFoundException();
@@ -66,15 +70,15 @@ public class EpisodeService implements EpisodeServiceInterface {
             ObjectMapper objectMapper = new ObjectMapper();
 
             ApiResponseDto<EpisodeDto> apiResponseDto = objectMapper.readValue(response.body(),
-                    new TypeReference<ApiResponseDto<EpisodeDto>>() {
-                    });
+                new TypeReference<ApiResponseDto<EpisodeDto>>() {
+                });
             return rewriteApiResponse(apiResponseDto, String.valueOf(sort));
 
-        }catch (InvalidParameterException e){
+        } catch (InvalidParameterException e) {
             throw new InvalidParameterException(e.getMessage());
-        } catch (NotFoundException e){
+        } catch (NotFoundException e) {
             throw new NotFoundException();
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("Erro ao buscar episódios: " + e.getMessage(), e);
         }
         return null;
@@ -86,8 +90,8 @@ public class EpisodeService implements EpisodeServiceInterface {
             if (id == null || id < 1) throw new InvalidIdException();
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(config.getApiBaseUrl() + "/episode/" + id))
-                    .build();
+                .uri(URI.create(config.getApiBaseUrl() + "/episode/" + id))
+                .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 404) throw new EpisodeNotFoundException();
             ObjectMapper objectMapper = new ObjectMapper();
@@ -111,9 +115,9 @@ public class EpisodeService implements EpisodeServiceInterface {
         InfoDto updatedInfo = rewriteInfoDto(apiResponseDto.info());
 
         List<EpisodeDto> updatedResults = apiResponseDto.results().stream()
-                .map(this::rewriteEpisodeDto)
-                .sorted((e1, e2) -> compareEpisodes(e1, e2, sort))
-                .collect(Collectors.toList());
+            .map(this::rewriteEpisodeDto)
+            .sorted((e1, e2) -> compareEpisodes(e1, e2, sort))
+            .collect(Collectors.toList());
 
         return new ApiResponseDto<>(updatedInfo, updatedResults);
     }
@@ -139,32 +143,32 @@ public class EpisodeService implements EpisodeServiceInterface {
 
     private InfoDto rewriteInfoDto(InfoDto originalInfo) {
         String nextUrl = Optional.ofNullable(originalInfo.next())
-                .map(next -> next.replace(config.getApiBaseUrl()+ "/episode",
-                        config.getLocalBaseUrl() + "/episodes"))
-                .orElse(null);
-    
+            .map(next -> next.replace(config.getApiBaseUrl() + "/episode",
+                config.getLocalBaseUrl() + "/episodes"))
+            .orElse(null);
+
         String prevUrl = Optional.ofNullable(originalInfo.prev())
-                .map(prev -> prev.replace(config.getApiBaseUrl() + "/episode",
-                        config.getLocalBaseUrl() + "/episodes"))
-                .orElse(null);
-    
+            .map(prev -> prev.replace(config.getApiBaseUrl() + "/episode",
+                config.getLocalBaseUrl() + "/episodes"))
+            .orElse(null);
+
         return new InfoDto(
-                originalInfo.count(),
-                originalInfo.pages(),
-                nextUrl,
-                prevUrl);
+            originalInfo.count(),
+            originalInfo.pages(),
+            nextUrl,
+            prevUrl);
     }
 
     private EpisodeDto rewriteEpisodeDto(EpisodeDto episode) {
         return new EpisodeDto(
-                episode.id(),
-                episode.name(),
-                episode.episodeCode(),
-                episode.releaseDate(),
-                episode.characters().stream()
-                        .map(character -> character.replace(config.getApiBaseUrl() + "/character/",
-                                config.getLocalBaseUrl() + "/characters/"))
-                        .collect(Collectors.toList()));
+            episode.id(),
+            episode.name(),
+            episode.episodeCode(),
+            episode.releaseDate(),
+            episode.characters().stream()
+                .map(character -> character.replace(config.getApiBaseUrl() + "/character/",
+                    config.getLocalBaseUrl() + "/characters/"))
+                .collect(Collectors.toList()));
     }
 
     public EpisodeModel saveEpisodeByDto(EpisodeDto episode) {
@@ -190,5 +194,16 @@ public class EpisodeService implements EpisodeServiceInterface {
             return episodeRepository.save(model);
         }
 
-        return null;    }
+        return null;
+    }
+
+    public EpisodeResponseDto convertEpisodeToDto(EpisodeModel episode) {
+        return new EpisodeResponseDto(
+            episode.getId(),
+            episode.getName(),
+            episode.getEpisodeCode(),
+            episode.getAirDate(),
+            episode.getCharacters()
+        );
+    }
 }

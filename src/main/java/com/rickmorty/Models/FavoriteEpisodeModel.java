@@ -8,17 +8,9 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "favorites_episodes")
-public class FavoriteEpisodeModel {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserModel user;
-
+@DiscriminatorValue("EPISODE")
+@Table(name = "favorite_episodes")
+public class FavoriteEpisodeModel extends FavoriteModel {
     @ManyToOne
     @JoinColumn(name = "episode_id", nullable = false)
     private EpisodeModel episode;

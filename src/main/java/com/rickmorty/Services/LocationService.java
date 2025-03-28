@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.InfoDto;
 import com.rickmorty.DTO.LocationDto;
+import com.rickmorty.DTO.responses.LocationResponseDto;
 import com.rickmorty.Models.LocationModel;
 import com.rickmorty.Repository.LocationRepository;
 import com.rickmorty.Utils.Config;
@@ -142,6 +143,7 @@ public class LocationService implements LocationServiceInterface {
                 location.url().replace(config.getApiBaseUrl()+"/location/", config.getLocalBaseUrl() + "/locations/")
         );
     }
+
     public LocationModel saveLocationByDto(LocationDto dto) {
         Optional<LocationModel> locationOpt = locationRepository.findById(dto.id());
 
@@ -158,5 +160,13 @@ public class LocationService implements LocationServiceInterface {
         return null;
     }
 
-
+    public LocationResponseDto convertLocationToDto(LocationModel location) {
+        return new LocationResponseDto(
+            location.getId(),
+            location.getName(),
+            location.getLocationType(),
+            location.getDimension(),
+            location.getCharacters()
+        );
+    }
 }

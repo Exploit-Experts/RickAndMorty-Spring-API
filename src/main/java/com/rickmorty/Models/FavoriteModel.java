@@ -2,26 +2,25 @@ package com.rickmorty.Models;
 
 import com.rickmorty.enums.FavoriteTypes;
 import jakarta.persistence.*;
-import lombok.Data;
-import java.util.HashSet;
-import java.util.Set;
+import lombok.*;
 
 @Entity
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "favorites")
-public class FavoriteModel {
-
+public abstract class FavoriteModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long apiId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserModel user;
 
     @Enumerated(EnumType.STRING)
-    private FavoriteTypes favoriteTypes;
-
-    @ManyToMany(mappedBy = "favorites", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private Set<UserModel> users = new HashSet<>();
-
+    @Column(name = "favorite_type", nullable = false, length = 20)
+    private FavoriteTypes favoriteType;
 }

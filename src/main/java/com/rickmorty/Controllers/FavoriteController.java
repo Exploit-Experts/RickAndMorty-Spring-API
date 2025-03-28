@@ -92,18 +92,24 @@ public class FavoriteController {
                                             @ExampleObject(name = "User hasn't favorites", value = "{\"message\": \"O usuário não tem favoritos cadastrados\"}")
                                     })),
             })
-    @GetMapping("/{userId}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Page<?>> getAllCharactersFavorites(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long userId,
+    @GetMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Page<?>> getAllFavorites(
             @RequestParam FavoriteTypes favoriteType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam SortFavorite sort,
             @RequestParam(defaultValue = "ASC") Sort.Direction direction
     ) {
-        Page<?> favorites = favoriteService.getAllFavorites(token, userId, favoriteType, page, sort, direction);
+        Page<?> favorites = favoriteService.getAllFavorites(page, sort, favoriteType, direction);
         return ResponseEntity.ok(favorites);
+    }
+
+    @GetMapping("/{favoriteId}")
+    public ResponseEntity<?> getFavoriteById(
+        @PathVariable Long favoriteId
+    ) {
+        Object favorite = favoriteService.getFavoriteById(null, favoriteId);
+        return ResponseEntity.ok(favorite);
     }
 
     @Operation(summary = "Remove a specific favorite for a user",
@@ -127,41 +133,12 @@ public class FavoriteController {
                                             @ExampleObject(name = "Favorite not found", value = "{\"message\": \"Favorito não cadastrado\"}")
                                     })),
             })
-    @DeleteMapping("/{userId}/{favoriteId}")
+    @DeleteMapping("/{favoriteId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<String> removeFavorite(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long userId,
+    public ResponseEntity<String> deleteFavoriteId(
             @PathVariable Long favoriteId
     ) {
-        favoriteService.removeFavorite(token, userId, favoriteId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @Operation(summary = "Remove all favorites for a user",
-            description = "Remove all favorites for a user by user ID",
-            responses = {
-                    @ApiResponse(responseCode = "204", description = "All favorites removed"),
-                    @ApiResponse(responseCode = "400", description = "Invalid parameter. Ex: send a letter in userId",
-                            content = @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(value = "{\"message\": \"Parâmetro userId inválido.\"}"))),
-                    @ApiResponse(responseCode = "401", description = "User not authenticate",
-                            content = @Content(mediaType = "application/json",
-                                    examples = {@ExampleObject(name = "Authentication requered", value = "{\"message\": \"Acesso nao autorizado. Autenticacao necessaria\"}")})),
-                    @ApiResponse(responseCode = "404", description = "User not found",
-                            content = @Content(mediaType = "application/json",
-                                    examples = {
-                                            @ExampleObject(name = "User not found", value = "{\"message\": \"Usuário não encontrado\"}"),
-                                            @ExampleObject(name = "User hasn't favorites", value = "{\"message\": \"O usuário não tem favoritos cadastrados\"}")
-                                    })),
-            })
-    @DeleteMapping("/{userId}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<String> removeFavoritesByUserId(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long userId
-    ) {
-        favoriteService.removeAllFavoritesByUserId(token, userId);
+        favoriteService.removeFavorite(favoriteId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
