@@ -2,11 +2,9 @@ package com.rickmorty.Services;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rickmorty.DTO.ApiResponseDto;
-import com.rickmorty.DTO.CharacterDto;
-import com.rickmorty.DTO.InfoDto;
-import com.rickmorty.DTO.LocationCharacterDto;
+import com.rickmorty.DTO.*;
 import com.rickmorty.Models.CharacterModel;
+import com.rickmorty.Models.LocationModel;
 import com.rickmorty.Repository.CharacterRepository;
 import com.rickmorty.Utils.Config;
 import com.rickmorty.enums.Gender;
@@ -20,93 +18,100 @@ import com.rickmorty.exceptions.NotFoundException;
 import com.rickmorty.interfaces.CharacterServiceInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+
 public class CharacterService implements CharacterServiceInterface {
 
     @Autowired
-    Config config;
+    private Config config;
 
     @Autowired
     private CharacterRepository characterRepository;
 
+
+
     @Override
     public ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort) {
-        if (page != null && page < 0) throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
-
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            StringBuilder urlBuilder = new StringBuilder(config.getApiBaseUrl() + "/character?");
-
-            if (page != null) urlBuilder.append("page=").append(page).append("&");
-            if (species != null) urlBuilder.append("species=").append(species).append("&");
-            if (gender != null) urlBuilder.append("gender=").append(gender).append("&");
-            if (status != null) urlBuilder.append("status=").append(status).append("&");
-            if (type != null){
-                type = type.replace(" ", "+");
-                urlBuilder.append("type=").append(type).append("&");
-            }
-            if (name != null){
-                name = name.replace(" ", "+");
-                urlBuilder.append("name=").append(name).append("&");
-            }
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(urlBuilder.toString()))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 404) throw new NotFoundException();
-            ObjectMapper objectMapper = new ObjectMapper();
-            ApiResponseDto<CharacterDto> apiResponseDto = objectMapper.readValue(response.body(), new TypeReference<ApiResponseDto<CharacterDto>>() {});
-
-            return rewriteApiResponse(apiResponseDto, String.valueOf(sort));
-
-        } catch (InvalidParameterException e){
-            throw new InvalidParameterException(e.getMessage());
-        }catch (NotFoundException e) {
-            throw new NotFoundException();
-        }catch (Exception e) {
-            throw new RuntimeException();
+        if (page != null && page < 1) {
+            throw new InvalidParameterException("Parâmetro page incorreto, deve ser um número inteiro maior ou igual a 1");
         }
+
+        Map<SortOrder, Sort> sortOptions = Map.of(
+                SortOrder.NAME_ASC, Sort.by(Sort.Direction.ASC, "name"),
+                SortOrder.NAME_DESC, Sort.by(Sort.Direction.DESC, "name"),
+                SortOrder.STATUS_ASC, Sort.by(Sort.Direction.ASC, "status"),
+                SortOrder.STATUS_DESC, Sort.by(Sort.Direction.DESC, "status")
+        );
+
+        Sort sortConfig = sortOptions.getOrDefault(sort, Sort.by(Sort.Direction.ASC, "name"));
+
+        Pageable pageable = PageRequest.of((page == null ? 0 : page - 1), 10, sortConfig);
+
+        Page<CharacterModel> characters = characterRepository.findAllWithFilters(name, status, String.valueOf(species), type, gender, pageable);
+        List<CharacterDto> characterDtos = characters.map(this::rewriteCharacterDto).getContent();
+
+        String firstPageUrl = page == null || page <= 1 ? null : "/api/v1/characters?page=1";
+        String lastPageUrl = page != null && page >= characters.getTotalPages() ? null : "/api/v1/characters?page=" + characters.getTotalPages();
+
+        InfoDto info = new InfoDto(characters.getTotalPages(), (int) characters.getTotalElements(), firstPageUrl, lastPageUrl);
+
+        return new ApiResponseDto<>(info, characterDtos);
     }
 
     @Override
     public CharacterDto findACharacterById(Long id) {
-        if (id == null || id < 1) throw new InvalidIdException();
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(config.getApiBaseUrl() + "/character/" + id))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            ObjectMapper objectMapper = new ObjectMapper();
+        return characterRepository.findById(id)
+                .map(this::rewriteCharacterDto)
+                .orElseThrow(CharacterNotFoundException::new);
+    }
 
-            if (response.statusCode() == 404) throw new CharacterNotFoundException();
+    private CharacterDto rewriteCharacterDto(CharacterModel character) {
+        final String imageUrl = String.format(
+                "https://res.cloudinary.com/dsbemw1jl/image/upload/v%s/characters/%d.png",
+                System.currentTimeMillis(), character.getId()
+        );
 
-            CharacterDto character = objectMapper.readValue(response.body(), CharacterDto.class);
-            return rewriteCharacterDto(character);
-        } catch (CharacterNotFoundException e) {
-            throw new CharacterNotFoundException();
-        } catch (Exception e) {
-            log.error("Erro ao buscar personagem por ID: " + e.getMessage(), e);
+        return new CharacterDto(
+                character.getId(),
+                character.getName(),
+                character.getStatus().toString(),
+                character.getSpecies(),
+                character.getCharacterType(),
+                character.getGender().toString(),
+                imageUrl,
+                Collections.emptyList(),
+                rewriteLocationDto(character.getLocationModel())
+        );
+    }
+
+    private LocationCharacterDto rewriteLocationDto(LocationModel location) {
+        if (location == null) {
+            return null;
         }
-        return null;
+        return new LocationCharacterDto(
+                location.getId().toString(),
+                location.getName()
+        );
     }
 
     @Override
@@ -170,12 +175,12 @@ public class CharacterService implements CharacterServiceInterface {
                 .map(next -> next.replace(config.getApiBaseUrl() + "/character",
                         config.getLocalBaseUrl() + "/characters"))
                 .orElse(null);
-    
+
         String prevUrl = Optional.ofNullable(originalInfo.prev())
                 .map(prev -> prev.replace(config.getApiBaseUrl() + "/character",
                         config.getLocalBaseUrl() + "/characters"))
                 .orElse(null);
-    
+
         return new InfoDto(
                 originalInfo.count(),
                 originalInfo.pages(),
