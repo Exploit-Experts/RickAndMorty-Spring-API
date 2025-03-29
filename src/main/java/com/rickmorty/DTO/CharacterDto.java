@@ -20,7 +20,4 @@ public record CharacterDto(
         @JsonProperty("image") String image,
         @JsonProperty("episode") List<String> episode,
         @JsonProperty("location") LocationCharacterDto location
-
-) {
-
-}
+) {}

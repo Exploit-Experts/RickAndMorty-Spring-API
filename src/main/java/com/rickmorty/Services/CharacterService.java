@@ -48,6 +48,9 @@ public class CharacterService implements CharacterServiceInterface {
     @Autowired
     private CharacterRepository characterRepository;
 
+    @Autowired
+    private CharacterRepository characterRepository;
+
     @Override
     public ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort) {
         if (page != null && page < 1) {
@@ -212,5 +215,52 @@ public class CharacterService implements CharacterServiceInterface {
         try (InputStream in = imageUrl.openStream()) {
             return in.readAllBytes();
         }
+    }
+
+    public CharacterModel saveCharacterByDto(CharacterDto dto) {
+        Optional<CharacterModel> character = characterRepository.findById(dto.id());
+        if (character.isEmpty()) {
+            CharacterModel model = new CharacterModel();
+            model.setId(dto.id());
+            model.setName(dto.name());
+            model.setSpecies(dto.species());
+            model.setCharacterType(dto.type());
+            model.setStatus(convertLifeStatus(dto.status()));
+            model.setGender(convertCharacterGender(dto.gender()));
+            model.setLocationModel(null);
+            model.setEpisodes(null);
+
+            return characterRepository.save(model);
+        }
+
+        return null;
+    }
+
+    private LifeStatus convertLifeStatus(String status) {
+        if ("Alive".equalsIgnoreCase(status)) {
+            return LifeStatus.ALIVE;
+        } else if ("Dead".equalsIgnoreCase(status)) {
+            return LifeStatus.DEAD;
+        }
+        return LifeStatus.UNKNOWN;
+    }
+
+    private Gender convertCharacterGender(String gender) {
+        if ("Male".equalsIgnoreCase(gender)) {
+            return Gender.MALE;
+        } else if ("Female".equalsIgnoreCase(gender)) {
+            return Gender.FEMALE;
+        }
+        return Gender.UNKNOWN;
+    }
+
+    public List<CharacterModel> findByIds(List<Long> characterIds) {
+        List<CharacterModel> listCharacter = new ArrayList<>();
+        for (Long characterId : characterIds) {
+            if (characterRepository.findById(characterId).isPresent()) {
+                listCharacter.add(characterRepository.findById(characterId).get());
+            }
+        }
+        return listCharacter;
     }
 }
