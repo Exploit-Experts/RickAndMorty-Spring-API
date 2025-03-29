@@ -4,9 +4,14 @@ import com.rickmorty.DTO.UserDto;
 import com.rickmorty.DTO.UserPatchDto;
 import com.rickmorty.Models.UserModel;
 import com.rickmorty.Repository.UserRepository;
+import com.rickmorty.enums.UserRole;
 import com.rickmorty.exceptions.*;
 import com.rickmorty.interfaces.UserServiceInterface;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -23,6 +28,7 @@ public class UserService implements UserServiceInterface {
     private UserRepository userRepository;
 
     @Override
+    @Transactional
     public void saveUser(UserDto userDto, BindingResult result) {
         validateFieldsWithCheckEmail(userDto, result);
 
@@ -30,8 +36,13 @@ public class UserService implements UserServiceInterface {
         userModel.setName(userDto.name());
         userModel.setSurname(userDto.surname());
         userModel.setEmail(userDto.email());
-        userModel.setPassword(userDto.password());
-        userModel.setDate_register(LocalDateTime.now());
+        userModel.setDateRegister(LocalDateTime.now());
+        userModel.setRole(UserRole.USER);
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(userDto.password());
+
+        userModel.setPassword(encryptedPassword);
+
         userRepository.save(userModel);
     }
 
@@ -55,7 +66,7 @@ public class UserService implements UserServiceInterface {
         user.setSurname(userDto.surname());
         user.setEmail(userDto.email());
         user.setPassword(userDto.password());
-        user.setDate_update(LocalDateTime.now());
+        user.setDateUpdate(LocalDateTime.now());
         userRepository.save(user);
     }
 
@@ -90,7 +101,7 @@ public class UserService implements UserServiceInterface {
         if (isUpdated) {
             validateFieldsPatch(userPatchDto, result);
 
-            user.setDate_update(LocalDateTime.now());
+            user.setDateUpdate(LocalDateTime.now());
             userRepository.save(user);
         }
     }
@@ -103,7 +114,7 @@ public class UserService implements UserServiceInterface {
 
         UserModel userModel = optionalUser.get();
         userModel.setActive(0);
-        userModel.setDeleted_at(LocalDateTime.now());
+        userModel.setDeletedAt(LocalDateTime.now());
         userRepository.save(userModel);
     }
 
@@ -152,5 +163,14 @@ public class UserService implements UserServiceInterface {
                     .collect(Collectors.toList());
             throw new ValidationErrorException(errors);
         }
+    }
+    public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
+        if (userRepository.findUserByEmail(email) == null || !userRepository.findByEmail(email).get().isEnabled()) {
+            throw new UserNotFoundException();
+        }
+        return userRepository.findUserByEmail(email);
+    }
+    public Optional<UserModel> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

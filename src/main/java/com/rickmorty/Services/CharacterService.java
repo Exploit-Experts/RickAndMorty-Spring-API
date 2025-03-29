@@ -6,6 +6,8 @@ import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.CharacterDto;
 import com.rickmorty.DTO.InfoDto;
 import com.rickmorty.DTO.LocationCharacterDto;
+import com.rickmorty.Models.CharacterModel;
+import com.rickmorty.Repository.CharacterRepository;
 import com.rickmorty.Utils.Config;
 import com.rickmorty.enums.Gender;
 import com.rickmorty.enums.LifeStatus;
@@ -28,6 +30,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,6 +41,9 @@ public class CharacterService implements CharacterServiceInterface {
 
     @Autowired
     Config config;
+
+    @Autowired
+    private CharacterRepository characterRepository;
 
     @Override
     public ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort) {
@@ -199,11 +205,56 @@ public class CharacterService implements CharacterServiceInterface {
         );
     }
 
-
-
     private byte[] downloadImage(URL imageUrl) throws Exception {
         try (InputStream in = imageUrl.openStream()) {
             return in.readAllBytes();
         }
+    }
+
+    public CharacterModel saveCharacterByDto(CharacterDto dto) {
+        Optional<CharacterModel> character = characterRepository.findById(dto.id());
+        if (character.isEmpty()) {
+            CharacterModel model = new CharacterModel();
+            model.setId(dto.id());
+            model.setName(dto.name());
+            model.setSpecies(dto.species());
+            model.setCharacterType(dto.type());
+            model.setStatus(convertLifeStatus(dto.status()));
+            model.setGender(convertCharacterGender(dto.gender()));
+            model.setLocationModel(null);
+            model.setEpisodes(null);
+
+            return characterRepository.save(model);
+        }
+
+        return null;
+    }
+
+    private LifeStatus convertLifeStatus(String status) {
+        if ("Alive".equalsIgnoreCase(status)) {
+            return LifeStatus.ALIVE;
+        } else if ("Dead".equalsIgnoreCase(status)) {
+            return LifeStatus.DEAD;
+        }
+        return LifeStatus.UNKNOWN;
+    }
+
+    private Gender convertCharacterGender(String gender) {
+        if ("Male".equalsIgnoreCase(gender)) {
+            return Gender.MALE;
+        } else if ("Female".equalsIgnoreCase(gender)) {
+            return Gender.FEMALE;
+        }
+        return Gender.UNKNOWN;
+    }
+
+    public List<CharacterModel> findByIds(List<Long> characterIds) {
+        List<CharacterModel> listCharacter = new ArrayList<>();
+        for (Long characterId : characterIds) {
+            if (characterRepository.findById(characterId).isPresent()) {
+                listCharacter.add(characterRepository.findById(characterId).get());
+            }
+        }
+        return listCharacter;
     }
 }

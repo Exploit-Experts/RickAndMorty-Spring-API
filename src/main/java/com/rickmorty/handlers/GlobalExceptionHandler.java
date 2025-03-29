@@ -24,6 +24,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CustomErrorResponse> handlerUserNotFound(UserNotFoundException ex) {
         return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.NOT_FOUND);
     }
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<CustomErrorResponse> invalidCredentialsException(InvalidCredentialsException ex){
+        return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.UNAUTHORIZED);
+    }
+    @ExceptionHandler(UserInactiveException.class)
+    public ResponseEntity<CustomErrorResponse> userInactiveException(UserInactiveException ex) {
+        return new ResponseEntity<>(new CustomErrorResponse(ex.getMessage()), HttpStatus.FORBIDDEN);
+    }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<CustomErrorResponse> handlePageNotFoundException(NotFoundException ex) {

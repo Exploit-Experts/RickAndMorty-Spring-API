@@ -14,7 +14,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
-@RequestMapping("/api/v1/episodes")
+@RequestMapping("api/v1/episodes")
 public class EpisodeController {
 
     @Autowired
