@@ -1,10 +1,15 @@
-FROM mysql:8.0.23
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
-ENV MYSQL_ROOT_PASSWORD= \
-    TZ=America/Recife
+WORKDIR /app
+COPY pom.xml /app
 
-CMD ["mysqld", "--default-authentication-plugin=mysql_native_password", "--sql-mode="]
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-EXPOSE 3306
+FROM eclipse-temurin:21-jre-alpine
 
-VOLUME ["/var/lib/mysql"]
+WORKDIR /app
+COPY --from=build /app/target/rickMorty-0.0.1-SNAPSHOT.jar app.jar
+
+EXPOSE 8080
+CMD ["java", "-jar", "app.jar"]

@@ -48,8 +48,7 @@ public class CharacterService implements CharacterServiceInterface {
     @Autowired
     private CharacterRepository characterRepository;
 
-    @Autowired
-    private CharacterRepository characterRepository;
+
 
     @Override
     public ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort) {
