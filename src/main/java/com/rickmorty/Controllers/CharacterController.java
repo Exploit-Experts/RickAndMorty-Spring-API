@@ -40,7 +40,7 @@ public class CharacterController {
                         })),
         })
         @GetMapping
-        public ResponseEntity<Map<String, Object>> getAllCharacters(
+        public ResponseEntity<ApiResponseDto<CharacterDto>> getAllCharacters(
                 @RequestParam(required = false) Integer page,
                 @RequestParam(required = false) String name,
                 @RequestParam(required = false) LifeStatus status,
@@ -49,7 +49,8 @@ public class CharacterController {
                 @RequestParam(required = false) Gender gender,
                 @RequestParam(required = false) SortOrder sort) {
 
-                Map<String, Object> characters = characterService.findAllCharacters(page, name, status, species, type, gender, sort);
+                ApiResponseDto<CharacterDto> characters = characterService.findAllCharacters(page, name, status, species, type, gender, sort);
+
                 return ResponseEntity.ok(characters);
         }
 

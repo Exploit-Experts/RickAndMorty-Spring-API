@@ -49,7 +49,7 @@ public class CharacterService implements CharacterServiceInterface {
     private CharacterRepository characterRepository;
 
     @Override
-    public Map<String, Object> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort) {
+    public ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort) {
         if (page != null && page < 1) {
             throw new InvalidParameterException("Parâmetro page incorreto, deve ser um número inteiro maior ou igual a 1");
         }
@@ -68,11 +68,12 @@ public class CharacterService implements CharacterServiceInterface {
         Page<CharacterModel> characters = characterRepository.findAllWithFilters(name, status, String.valueOf(species), type, gender, pageable);
         List<CharacterDto> characterDtos = characters.map(this::rewriteCharacterDto).getContent();
 
-        return Map.of(
-                "characters", characterDtos,
-                "totalPages", characters.getTotalPages(),
-                "totalElements", characters.getTotalElements()
-        );
+        String firstPageUrl = page == null || page <= 1 ? null : "/api/v1/characters?page=1";
+        String lastPageUrl = page != null && page >= characters.getTotalPages() ? null : "/api/v1/characters?page=" + characters.getTotalPages();
+
+        InfoDto info = new InfoDto(characters.getTotalPages(), (int) characters.getTotalElements(), firstPageUrl, lastPageUrl);
+
+        return new ApiResponseDto<>(info, characterDtos);
     }
 
     @Override

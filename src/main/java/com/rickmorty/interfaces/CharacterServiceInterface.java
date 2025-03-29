@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.Map;
 
 public interface CharacterServiceInterface {
-  Map<String, Object> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort);
+  ApiResponseDto<CharacterDto> findAllCharacters(Integer page, String name, LifeStatus status, Species species, String type, Gender gender, SortOrder sort);
 
   CharacterDto findACharacterById(Long id);
 
