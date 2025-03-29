@@ -1,6 +1,5 @@
 package com.rickmorty.Services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rickmorty.DTO.ApiResponseDto;
 import com.rickmorty.DTO.InfoDto;
@@ -10,13 +9,11 @@ import com.rickmorty.Repository.LocationRepository;
 import com.rickmorty.Utils.Config;
 import com.rickmorty.exceptions.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,123 +22,186 @@ import com.rickmorty.interfaces.LocationServiceInterface;
 
 @Slf4j
 @Service
-public class LocationService implements LocationServiceInterface {
+public class locationService implements LocationServiceInterface {
 
     private final Config config;
     private final ObjectMapper objectMapper;
-    private final HttpClient client;
     private final LocationRepository locationRepository;
 
     public LocationService(ObjectMapper objectMapper, LocationRepository locationRepository, Config config) {
         this.objectMapper = objectMapper;
-        this.client = HttpClient.newHttpClient();
         this.locationRepository = locationRepository;
         this.config = config;
     }
 
+    public locationService(Config config, ObjectMapper objectMapper, LocationRepository locationRepository) {
+        this.config = config;
+        this.objectMapper = objectMapper;
+        this.locationRepository = locationRepository;
+    }
+
     @Override
     public ApiResponseDto<LocationDto> findAllLocations(Integer page, String name, String type, String dimension, SortLocation sort) {
-        if (page != null && page < 1) throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
+        log.debug("Iniciando busca por locais - page: {}, name: {}, type: {}, dimension: {}, sort: {}",
+                page, name, type, dimension, sort);
+
+        if (page != null && page < 1) {
+            log.error("Parâmetro page inválido: {}", page);
+            throw new InvalidParameterException("Parâmetro page incorreto, deve ser um numero inteiro maior ou igual a 1");
+        }
+
         try {
-            StringBuilder urlBuilder = new StringBuilder(config.getApiBaseUrl() + "/location?");
-            if (page != null) urlBuilder.append("page=").append(page).append("&");
-            if (name != null) urlBuilder.append("name=").append(name).append("&");
-            if (type != null) urlBuilder.append("type=").append(type).append("&");
-            if (dimension != null) urlBuilder.append("dimension=").append(dimension).append("&");
+            int pageNumber = page != null ? page - 1 : 0;
+            int pageSize = 20;
+            Pageable pageable = createPageable(pageNumber, pageSize, sort);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(urlBuilder.toString()))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            log.debug("Criado pageable: {}", pageable);
 
-            if (response.body() == null || response.body().isEmpty() || response.statusCode() == 404) throw new NotFoundException();
+            Page<LocationModel> locationPage;
+            if (name != null || type != null || dimension != null) {
+                log.debug("Aplicando filtros - name: {}, type: {}, dimension: {}", name, type, dimension);
+                locationPage = locationRepository.findWithFilters(name, type, dimension, pageable);
+            } else {
+                log.debug("Buscando todos os locais sem filtros");
+                locationPage = locationRepository.findAll(pageable);
+            }
 
-            ApiResponseDto<LocationDto> apiResponseDto = objectMapper.readValue(response.body(),
-                    new TypeReference<ApiResponseDto<LocationDto>>() {
-                    });
-            return rewriteApiResponse(apiResponseDto, String.valueOf(sort));  
+            if (locationPage.isEmpty()) {
+                log.warn("Nenhum local encontrado com os filtros aplicados");
+                throw new NotFoundException();
+            }
+
+            List<LocationDto> locations = locationPage.getContent().stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
+            InfoDto info = new InfoDto(
+                    (int) locationPage.getTotalElements(),
+                    locationPage.getTotalPages(),
+                    locationPage.hasNext() ? buildNextUrl(pageNumber + 1, name, type, dimension) : null,
+                    locationPage.hasPrevious() ? buildPrevUrl(pageNumber - 1, name, type, dimension) : null
+            );
+
+            log.info("Busca concluída - {} locais encontrados", locations.size());
+            return new ApiResponseDto<>(info, locations);
         } catch (NotFoundException e) {
+            log.error("Nenhum local encontrado", e);
             throw new NotFoundException();
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.error("Erro inesperado ao buscar locais", e);
+            throw new RuntimeException("Erro ao processar requisição");
         }
     }
+
 
     @Override
     public LocationDto getLocationById(Long id) {
-        if (id == null || id < 1) throw new InvalidIdException();
+        log.debug("Buscando local por ID: {}", id);
+
+        if (id == null || id < 1) {
+            log.error("ID inválido: {}", id);
+            throw new InvalidIdException();
+        }
+
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(config.getApiBaseUrl() + "/location/" + id))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            Optional<LocationModel> locationOpt = locationRepository.findById(id);
 
-            if (response.body().isEmpty() || response.statusCode() == 404) throw new LocationNotFoundException("Localização não encontrada");
+            if (locationOpt.isEmpty()) {
+                log.warn("Local não encontrado para ID: {}", id);
+                throw new LocationNotFoundException("Localização não encontrada");
+            }
 
-            LocationDto location = objectMapper.readValue(response.body(), LocationDto.class);
-            return rewriteLocationDto(location);
+            LocationDto dto = convertToDto(locationOpt.get());
+            log.info("Local encontrado para ID {}: {}", id, dto.name());
+            return dto;
         } catch (LocationNotFoundException ex) {
+            log.error("Erro ao buscar local por ID: {}", id, ex);
             throw new LocationNotFoundException(ex.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.error("Erro inesperado ao buscar local por ID: {}", id, e);
+            throw new RuntimeException("Erro ao processar requisição");
         }
     }
 
-    private ApiResponseDto<LocationDto> rewriteApiResponse(ApiResponseDto<LocationDto> apiResponseDto, String sort) {
-        InfoDto updatedInfo = rewriteInfoDto(apiResponseDto.info());
-
-        List<LocationDto> updatedResults = apiResponseDto.results().stream()
-                .map(this::rewriteLocationDto)
-                .sorted((l1, l2) -> compareLocations(l1, l2, sort))
-                .collect(Collectors.toList());
-
-        return new ApiResponseDto<>(updatedInfo, updatedResults);
-    }
-
-    private int compareLocations(LocationDto l1, LocationDto l2, String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return 0;
+    private Pageable createPageable(int page, int size, SortLocation sort) {
+        if (sort == null) {
+            return PageRequest.of(page, size);
         }
-        switch (sort.toLowerCase()) {
-            case "name_asc":
-                return l1.name().compareToIgnoreCase(l2.name());
-            case "name_desc":
-                return l2.name().compareToIgnoreCase(l1.name());
-            case "type_asc":
-                return l1.type().compareToIgnoreCase(l2.type());
-            case "type_desc":
-                return l2.type().compareToIgnoreCase(l1.type());
-            case "dimension_asc":
-                return l1.dimension().compareToIgnoreCase(l2.dimension());
-            case "dimension_desc":
-                return l2.dimension().compareToIgnoreCase(l1.dimension());
+
+        Sort.Direction direction;
+        String property;
+
+        switch (sort) {
+            case NAME_ASC:
+                direction = Sort.Direction.ASC;
+                property = "name";
+                break;
+            case NAME_DESC:
+                direction = Sort.Direction.DESC;
+                property = "name";
+                break;
+            case TYPE_ASC:
+                direction = Sort.Direction.ASC;
+                property = "locationType";
+                break;
+            case TYPE_DESC:
+                direction = Sort.Direction.DESC;
+                property = "locationType";
+                break;
+            case DIMENSION_ASC:
+                direction = Sort.Direction.ASC;
+                property = "dimension";
+                break;
+            case DIMENSION_DESC:
+                direction = Sort.Direction.DESC;
+                property = "dimension";
+                break;
             default:
-                return 0;
+                return PageRequest.of(page, size);
         }
+
+        return PageRequest.of(page, size, Sort.by(direction, property));
     }
 
-    private InfoDto rewriteInfoDto(InfoDto originalInfo) {
-        return new InfoDto(
-                originalInfo.count(),
-                originalInfo.pages(),
-                originalInfo.next() != null ? originalInfo.next().replace(config.getApiBaseUrl() + "/location", config.getLocalBaseUrl() + "/locations") : null,
-                originalInfo.prev() != null ? originalInfo.prev().replace(config.getApiBaseUrl() + "/location", config.getLocalBaseUrl() + "/locations") : null
-        );
-    }
+    private LocationDto convertToDto(LocationModel model) {
+        log.trace("Convertendo LocationModel para DTO: {}", model.getId());
 
-    private LocationDto rewriteLocationDto(LocationDto location) {
+        List<String> residents = model.getCharacters() != null ?
+                model.getCharacters().stream()
+                        .map(character -> {
+                            log.trace("Mapeando residente: {}", character.getId());
+                            return config.getLocalBaseUrl() + "/characters/" + character.getId();
+                        })
+                        .collect(Collectors.toList()) :
+                List.of();
+
         return new LocationDto(
-                location.id(),
-                location.name(),
-                location.type(),
-                location.dimension(),
-                location.residents().stream()
-                        .map(resident -> resident.replace(config.getApiBaseUrl() + "/character/",
-                                config.getLocalBaseUrl() + "/characters/"))
-                        .collect(Collectors.toList()),
-                location.url().replace(config.getApiBaseUrl()+"/location/", config.getLocalBaseUrl() + "/locations/")
+                model.getId(),
+                model.getName(),
+                model.getLocationType(),
+                model.getDimension(),
+                residents,
+                config.getLocalBaseUrl() + "/locations/" + model.getId()
         );
     }
+}
+
+    private String buildNextUrl(int nextPage, String name, String type, String dimension) {
+        StringBuilder url = new StringBuilder(config.getLocalBaseUrl() + "/locations?page=" + (nextPage + 1));
+        if (name != null) url.append("&name=").append(name);
+        if (type != null) url.append("&type=").append(type);
+        if (dimension != null) url.append("&dimension=").append(dimension);
+        return url.toString();
+    }
+
+    private String buildPrevUrl(int prevPage, String name, String type, String dimension) {
+        StringBuilder url = new StringBuilder(config.getLocalBaseUrl() + "/locations?page=" + (prevPage + 1));
+        if (name != null) url.append("&name=").append(name);
+        if (type != null) url.append("&type=").append(type);
+        if (dimension != null) url.append("&dimension=").append(dimension);
+        return url.toString();
+    }
+
     public LocationModel saveLocationByDto(LocationDto dto) {
         Optional<LocationModel> locationOpt = locationRepository.findById(dto.id());
 
@@ -158,5 +218,5 @@ public class LocationService implements LocationServiceInterface {
         return null;
     }
 
-
+public void main() {
 }
